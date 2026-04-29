@@ -1,6 +1,4 @@
 [build]
+  command = "echo build"
   functions = "functions"
   publish = "."
-
-[functions]
-  directory = "functions"
