@@ -983,6 +983,11 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
   window.fbLoadApiKey().then(key => {
     if(key && key.startsWith('sk-ant-')){
       window._preloadedApiKey = key;
+      // Store in cookie right away (most reliable persistence)
+      document.cookie = 'menusfamille_apikey='+encodeURIComponent(key)+';max-age=31536000;path=/;SameSite=Lax';
+      try{ localStorage.setItem('menusfamille_apikey', key); }catch(e){}
+      // Update UI if app already loaded
+      if(window.updateApiKeyStatus) window.updateApiKeyStatus();
       console.log('✅ Clé API pré-chargée depuis Firebase');
     }
   });
@@ -1190,8 +1195,20 @@ function clearApiKey(){
 }
 function hasApiKey(){ return !!getApiKey(); }
 
+// Called by Firebase module as soon as key is available
+window._applyApiKey = function(key){
+  if(!key || !key.startsWith('sk-ant-')) return;
+  _apiKeyMem = key;
+  window._preloadedApiKey = key;
+  try{ document.cookie='menusfamille_apikey='+encodeURIComponent(key)+';max-age=31536000;path=/;SameSite=Lax'; }catch(e){}
+  try{ localStorage.setItem('menusfamille_apikey', key); }catch(e){}
+  updateApiKeyStatus();
+  console.log('✅ Clé API appliquée:', key.slice(0,15)+'...');
+};
+
 // ══ STORAGE — In-memory (file://) + localStorage (web) ════════
 const _memStore = {};
+let _sortMode = 'rayon'; // courses sort mode
 function saveWeek(key,data){
   _memStore[key]=data;
   try{localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(data));}catch(e){}
@@ -2542,6 +2559,19 @@ function openFirebaseSetupModal(){
   // Update API key status
   updateApiKeyStatus();
 
+  // Poll for API key + update display when found
+  let _apiKeyPollCount = 0;
+  const pollApiKey = setInterval(async () => {
+    _apiKeyPollCount++;
+    if(_apiKeyPollCount > 12){ clearInterval(pollApiKey); return; }
+    if(getApiKey()){
+      clearInterval(pollApiKey);
+      updateApiKeyStatus();
+      return;
+    }
+    await loadApiKeyFromFirebase();
+  }, 800);
+
   // Check Firebase and sync data
   const checkFb = async () => {
     updateFirebaseStatus();
@@ -2653,7 +2683,6 @@ function estimateTotalBudget(courses){
 }
 
 // ══ SORT MODE ═══════════════════════════════════════════════════
-let _sortMode = 'rayon';
 
 function setSortMode(mode, btn){
   _sortMode = mode;
