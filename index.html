@@ -962,21 +962,30 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
     } catch(e) { return null; }
   };
 
-  // API Key stored per-user in Firebase (private, not shared)
+  // API Key stored under family path (shared between all family devices)
   window.fbSaveApiKey = async function(key) {
-    if(!_firebaseReady || !_db || !_userId) return;
-    try { await set(ref(_db, `users/${_userId}/apikey`), key); } catch(e) {}
+    if(!_firebaseReady || !_db) return;
+    try { await set(ref(_db, `${FAMILY_ID}/apikey`), key); } catch(e) {console.warn('fbSaveApiKey error:',e);} 
   };
 
   window.fbLoadApiKey = async function() {
-    if(!_firebaseReady || !_db || !_userId) return null;
+    if(!_firebaseReady || !_db) return null;
     try {
-      const snap = await get(ref(_db, `users/${_userId}/apikey`));
+      const snap = await get(ref(_db, `${FAMILY_ID}/apikey`));
+      console.log('Firebase apikey loaded:', snap.exists() ? 'found' : 'not found');
       return snap.exists() ? snap.val() : null;
-    } catch(e) { return null; }
+    } catch(e) { console.warn('fbLoadApiKey error:',e); return null; }
   };
 
   window.fbIsReady = function() { return _firebaseReady; };
+
+  // Load API key immediately when Firebase connects (before auth)
+  window.fbLoadApiKey().then(key => {
+    if(key && key.startsWith('sk-ant-')){
+      window._preloadedApiKey = key;
+      console.log('✅ Clé API pré-chargée depuis Firebase');
+    }
+  });
 
   // Notify app that Firebase is ready
   window._fbReady = true;
@@ -1094,6 +1103,8 @@ let _apiKeyMem = '';
 
 function getApiKey(){
   if(_apiKeyMem) return _apiKeyMem;
+  // Check preloaded from Firebase
+  if(window._preloadedApiKey){ _apiKeyMem = window._preloadedApiKey; return _apiKeyMem; }
   try{ const k = localStorage.getItem('menusfamille_apikey'); if(k){ _apiKeyMem=k; return k; } }catch(e){}
   return '';
 }
@@ -1106,14 +1117,25 @@ function setApiKey(key){
   }
 }
 async function loadApiKeyFromFirebase(){
-  if(!window.fbLoadApiKey) return;
-  const key = await window.fbLoadApiKey();
-  if(key && key.startsWith('sk-ant-')){
-    _apiKeyMem = key;
-    try{ localStorage.setItem('menusfamille_apikey', key); }catch(e){}
+  // Check preloaded first
+  if(window._preloadedApiKey && window._preloadedApiKey.startsWith('sk-ant-')){
+    _apiKeyMem = window._preloadedApiKey;
+    try{ localStorage.setItem('menusfamille_apikey', _apiKeyMem); }catch(e){}
     updateApiKeyStatus();
-    console.log('✅ Clé API chargée depuis Firebase');
+    console.log('✅ Clé API depuis cache Firebase');
+    return;
   }
+  if(!window.fbLoadApiKey) return;
+  try {
+    const key = await window.fbLoadApiKey();
+    if(key && key.startsWith('sk-ant-')){
+      _apiKeyMem = key;
+      window._preloadedApiKey = key;
+      try{ localStorage.setItem('menusfamille_apikey', key); }catch(e){}
+      updateApiKeyStatus();
+      console.log('✅ Clé API chargée depuis Firebase');
+    }
+  } catch(e){ console.warn('loadApiKeyFromFirebase error:', e); }
 }
 
 function showApiKeyModal(){
