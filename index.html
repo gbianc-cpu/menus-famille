@@ -803,6 +803,9 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
     <button class="mobile-nav-btn" onclick="goHome()">
       <span class="mnav-icon">🏠</span>Accueil
     </button>
+    <button class="mobile-nav-btn" id="mobile-account-btn" onclick="openLoginModal()">
+      <span class="mnav-icon">👤</span><span id="mobile-account-label">Compte</span>
+    </button>
   </div>
 </div>
 
@@ -959,6 +962,20 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
     } catch(e) { return null; }
   };
 
+  // API Key stored per-user in Firebase (private, not shared)
+  window.fbSaveApiKey = async function(key) {
+    if(!_firebaseReady || !_db || !_userId) return;
+    try { await set(ref(_db, `users/${_userId}/apikey`), key); } catch(e) {}
+  };
+
+  window.fbLoadApiKey = async function() {
+    if(!_firebaseReady || !_db || !_userId) return null;
+    try {
+      const snap = await get(ref(_db, `users/${_userId}/apikey`));
+      return snap.exists() ? snap.val() : null;
+    } catch(e) { return null; }
+  };
+
   window.fbIsReady = function() { return _firebaseReady; };
 
   // Notify app that Firebase is ready
@@ -1073,15 +1090,31 @@ function fillWeekSelect(){
 }
 
 // ══ API KEY MANAGEMENT ══════════════════════════════════════════
+let _apiKeyMem = '';
+
 function getApiKey(){
-  try{ return localStorage.getItem('menusfamille_apikey') || ''; }
-  catch(e){ return _apiKeyMem || ''; }
+  if(_apiKeyMem) return _apiKeyMem;
+  try{ const k = localStorage.getItem('menusfamille_apikey'); if(k){ _apiKeyMem=k; return k; } }catch(e){}
+  return '';
 }
 function setApiKey(key){
   _apiKeyMem = key;
   try{ localStorage.setItem('menusfamille_apikey', key); }catch(e){}
+  // Also save to Firebase if connected
+  if(window.fbIsReady && window.fbIsReady() && window.fbSaveApiKey){
+    window.fbSaveApiKey(key);
+  }
 }
-let _apiKeyMem = '';
+async function loadApiKeyFromFirebase(){
+  if(!window.fbLoadApiKey) return;
+  const key = await window.fbLoadApiKey();
+  if(key && key.startsWith('sk-ant-')){
+    _apiKeyMem = key;
+    try{ localStorage.setItem('menusfamille_apikey', key); }catch(e){}
+    updateApiKeyStatus();
+    console.log('✅ Clé API chargée depuis Firebase');
+  }
+}
 
 function showApiKeyModal(){
   document.getElementById('apikey-modal').classList.add('active');
@@ -1103,9 +1136,11 @@ function saveApiKey(){
   updateLoginStatus();
 
   // Listen for auth state changes
-  window._onAuthReady = (user) => {
+  window._onAuthReady = async (user) => {
     updateLoginStatus();
     updateFirebaseStatus();
+    // Load API key from Firebase for this user
+    await loadApiKeyFromFirebase();
   };
   showToast('✓ Clé API enregistrée — vous pouvez générer vos menus !');
 }
@@ -2491,6 +2526,8 @@ function openFirebaseSetupModal(){
       }
       updateFirebaseStatus();
       showSyncIndicator('saved');
+      // Load API key from Firebase
+      await loadApiKeyFromFirebase();
     }
   };
 
@@ -2658,7 +2695,8 @@ function shareWhatsApp(){
 function openLoginModal(){
   const user = window.fbGetUser ? window.fbGetUser() : null;
   if(user && !user.isAnonymous){
-    showToast('Connecté en tant que ' + user.email);
+    const action = confirm('Connecté en tant que ' + user.email + '\n\nSe déconnecter ?');
+    if(action) doSignOut();
     return;
   }
   document.getElementById('login-email').value = '';
@@ -2706,12 +2744,17 @@ function updateLoginStatus(){
   const user = window.fbGetUser ? window.fbGetUser() : null;
   const bar = document.getElementById('user-bar');
   const heroBtn = document.getElementById('login-hero-btn');
+  const mobileBtn = document.getElementById('mobile-account-label');
   if(user && !user.isAnonymous){
     if(bar){ bar.className = 'user-bar show'; document.getElementById('user-bar-name').textContent = user.email; }
     if(heroBtn){ heroBtn.textContent = '👤 ' + user.email.split('@')[0]; heroBtn.style.color = 'var(--sage)'; }
+    if(mobileBtn){ mobileBtn.textContent = user.email.split('@')[0]; }
+    // Auto-load API key from Firebase
+    loadApiKeyFromFirebase();
   } else {
     if(bar) bar.className = 'user-bar';
     if(heroBtn){ heroBtn.textContent = '👤 Compte'; heroBtn.style.color = ''; }
+    if(mobileBtn){ mobileBtn.textContent = 'Compte'; }
   }
 }
 
