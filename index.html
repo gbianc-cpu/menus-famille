@@ -1101,25 +1101,42 @@ function fillWeekSelect(){
 // ══ API KEY MANAGEMENT ══════════════════════════════════════════
 let _apiKeyMem = '';
 
+// Cookie helpers — work everywhere including GitHub Pages
+function setCookie(name, value, days){
+  const d = new Date(); d.setTime(d.getTime()+(days*24*60*60*1000));
+  document.cookie = name+'='+encodeURIComponent(value)+';expires='+d.toUTCString()+';path=/;SameSite=Lax';
+}
+function getCookie(name){
+  const c = document.cookie.split(';').find(c=>c.trim().startsWith(name+'='));
+  return c ? decodeURIComponent(c.trim().slice(name.length+1)) : '';
+}
+
 function getApiKey(){
   if(_apiKeyMem) return _apiKeyMem;
-  // Check preloaded from Firebase
-  if(window._preloadedApiKey){ _apiKeyMem = window._preloadedApiKey; return _apiKeyMem; }
-  try{ const k = localStorage.getItem('menusfamille_apikey'); if(k){ _apiKeyMem=k; return k; } }catch(e){}
+  if(window._preloadedApiKey){ _apiKeyMem=window._preloadedApiKey; return _apiKeyMem; }
+  // Try cookie first (most reliable)
+  const cookie = getCookie('menusfamille_apikey');
+  if(cookie && cookie.startsWith('sk-ant-')){ _apiKeyMem=cookie; return _apiKeyMem; }
+  // Try localStorage as fallback
+  try{ const k=localStorage.getItem('menusfamille_apikey'); if(k && k.startsWith('sk-ant-')){ _apiKeyMem=k; return k; } }catch(e){}
   return '';
 }
+
 function setApiKey(key){
   _apiKeyMem = key;
+  // Save in cookie (365 days, most reliable)
+  setCookie('menusfamille_apikey', key, 365);
+  // Also localStorage
   try{ localStorage.setItem('menusfamille_apikey', key); }catch(e){}
-  // Also save to Firebase if connected
+  // Also Firebase
   if(window.fbIsReady && window.fbIsReady() && window.fbSaveApiKey){
     window.fbSaveApiKey(key);
   }
 }
 async function loadApiKeyFromFirebase(){
-  // Check preloaded first
   if(window._preloadedApiKey && window._preloadedApiKey.startsWith('sk-ant-')){
     _apiKeyMem = window._preloadedApiKey;
+    setCookie('menusfamille_apikey', _apiKeyMem, 365);
     try{ localStorage.setItem('menusfamille_apikey', _apiKeyMem); }catch(e){}
     updateApiKeyStatus();
     console.log('✅ Clé API depuis cache Firebase');
@@ -1131,6 +1148,7 @@ async function loadApiKeyFromFirebase(){
     if(key && key.startsWith('sk-ant-')){
       _apiKeyMem = key;
       window._preloadedApiKey = key;
+      setCookie('menusfamille_apikey', key, 365);
       try{ localStorage.setItem('menusfamille_apikey', key); }catch(e){}
       updateApiKeyStatus();
       console.log('✅ Clé API chargée depuis Firebase');
