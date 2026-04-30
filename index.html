@@ -270,6 +270,61 @@ body{background:var(--cream);font-family:'Outfit',sans-serif;color:var(--text);m
 .replace-go:disabled{opacity:.5;cursor:not-allowed;}
 .replace-loading{display:none;text-align:center;padding:.75rem 0;font-size:13px;color:var(--text2);}
 
+/* PERSON PREFERENCES */
+.prefs-modal-overlay{background:rgba(0,0,0,.65);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.prefs-box{background:var(--warm);border-radius:16px;padding:2rem;width:92%;max-width:540px;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.prefs-title{font-family:'Lora',serif;font-size:20px;color:var(--forest);margin-bottom:1.25rem;}
+.person-prefs{border:0.5px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;}
+.person-prefs-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--cream);}
+.person-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.person-prefs-name{font-size:14px;font-weight:600;color:var(--text);}
+.person-prefs-body{padding:12px 14px;}
+.prefs-tag-input{display:flex;gap:8px;margin-bottom:10px;}
+.prefs-tag-field{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--text);background:var(--cream);outline:none;}
+.prefs-tag-field:focus{border-color:var(--forest);}
+.prefs-add-btn{padding:8px 14px;background:var(--forest);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;white-space:nowrap;}
+.prefs-tags{display:flex;flex-wrap:wrap;gap:6px;min-height:28px;}
+.prefs-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;}
+.prefs-tag.aime{background:#EAF2EB;color:#1E4A22;}
+.prefs-tag.naime-pas{background:var(--terra-pale);color:var(--terracotta);}
+.prefs-tag-del{cursor:pointer;font-size:14px;opacity:.6;background:none;border:none;padding:0;color:inherit;}
+.prefs-type-btns{display:flex;gap:6px;margin-bottom:8px;}
+.prefs-type-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;background:var(--warm);}
+.prefs-type-btn.active-like{background:#EAF2EB;border-color:#4A7055;color:#1E4A22;font-weight:600;}
+.prefs-type-btn.active-dislike{background:var(--terra-pale);border-color:var(--terracotta);color:var(--terracotta);font-weight:600;}
+.prefs-save-btn{width:100%;padding:11px;background:var(--forest);border:none;border-radius:8px;color:#fff;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-top:1rem;}
+
+/* JOURNAL ALIMENTAIRE */
+.journal-overlay{background:rgba(0,0,0,.65);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.journal-box{background:var(--warm);border-radius:16px;padding:2rem;width:92%;max-width:600px;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.journal-title{font-family:'Lora',serif;font-size:20px;color:var(--forest);margin-bottom:1.25rem;}
+.journal-day{border:0.5px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.journal-day-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--cream);}
+.journal-day-name{font-size:14px;font-weight:600;color:var(--text);}
+.journal-day-date{font-size:11px;color:var(--text3);}
+.journal-slots{padding:10px 14px;display:grid;gap:8px;}
+.journal-slot{display:grid;grid-template-columns:60px 1fr auto;align-items:center;gap:8px;}
+.journal-slot-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;}
+.journal-slot-planned{font-size:12px;color:var(--text2);font-style:italic;}
+.journal-slot-actual{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-family:'Outfit',sans-serif;font-size:12px;background:var(--cream);outline:none;width:100%;}
+.journal-slot-actual:focus{border-color:var(--forest);}
+.journal-ate-it{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);}
+.journal-ate-it input{accent-color:var(--forest);}
+.journal-save-btn{width:100%;padding:11px;background:var(--forest);border:none;border-radius:8px;color:#fff;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-top:1rem;}
+.journal-entry-done{background:#EAF2EB;border-radius:6px;padding:4px 10px;font-size:11px;color:#1E4A22;font-weight:500;}
+
+/* SEASON INDICATOR */
+.season-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:var(--cream);border:0.5px solid var(--border);font-size:11px;color:var(--text2);margin-left:8px;}
+
+/* RECIPE GENERATION */
+.recipe-gen-btn{display:flex;align-items:center;gap:8px;width:100%;padding:12px 16px;margin:10px 0 0;background:linear-gradient(135deg,var(--forest),var(--forest-light));border:none;border-radius:10px;color:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s;}
+.recipe-gen-btn:hover{opacity:.88;}
+.recipe-gen-btn:disabled{opacity:.5;cursor:not-allowed;}
+.recipe-stub-notice{background:var(--amber-pale);border:0.5px solid #E8D0A0;border-radius:8px;padding:10px 14px;font-size:12px;color:#7A5C10;margin-bottom:10px;}
+.recipe-generating{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:12px;color:var(--text2);}
+.recipe-gen-dot{width:8px;height:8px;border-radius:50%;background:var(--forest);animation:pulse-dot 1s ease infinite;}
+.recipe-badge-new{display:inline-block;font-size:9px;padding:2px 6px;border-radius:20px;background:var(--forest);color:#fff;margin-left:6px;vertical-align:middle;font-weight:600;letter-spacing:.05em;}
+
 /* Replace button on meal cards */
 .meal-replace-btn{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s;}
 .meal-replace-btn:hover{border-color:var(--terracotta);color:var(--terracotta);background:var(--terra-pale);}
@@ -498,6 +553,14 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
       <span class="home-btn-icon">🔑</span>
       <div><div id="home-apikey-label">Configurer la clé API</div><div class="home-btn-sub">Pour générer de nouveaux menus</div></div>
     </button>
+    <button class="home-btn" style="margin-bottom:10px;" onclick="openPrefsModal()">
+      <span class="home-btn-icon">❤</span>
+      <div><div>Préférences alimentaires</div><div class="home-btn-sub">Goûts et aversions par personne</div></div>
+    </button>
+    <button class="home-btn" style="margin-bottom:10px;" onclick="openJournalModal()">
+      <span class="home-btn-icon">📔</span>
+      <div><div>Journal alimentaire</div><div class="home-btn-sub">Ce que vous avez réellement mangé</div></div>
+    </button>
 
     <div class="home-divider"></div>
 
@@ -565,6 +628,32 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
     <button class="history-close" onclick="closeHistory()">×</button>
   </div>
   <div class="history-content" id="history-content"></div>
+</div>
+
+<!-- ══ PERSON PREFERENCES MODAL ════════════════════════════════════ -->
+<div id="prefs-modal" class="overlay prefs-modal-overlay">
+  <div class="prefs-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <div class="prefs-title">👨‍👩‍👧‍👦 Préférences alimentaires</div>
+      <button onclick="closePrefsModal()" style="background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--text3);">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.5;">Ces préférences sont mémorisées et utilisées lors de chaque génération de menus.</p>
+    <div id="prefs-persons-list"></div>
+    <button class="prefs-save-btn" onclick="savePersonPrefs()">✅ Enregistrer les préférences</button>
+  </div>
+</div>
+
+<!-- ══ JOURNAL ALIMENTAIRE MODAL ════════════════════════════════════ -->
+<div id="journal-modal" class="overlay journal-overlay">
+  <div class="journal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <div class="journal-title">📔 Journal alimentaire</div>
+      <button onclick="closeJournalModal()" style="background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--text3);">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;">Notez ce que vous avez réellement mangé. L'IA en tiendra compte pour les prochaines semaines.</p>
+    <div id="journal-content"></div>
+    <button class="journal-save-btn" onclick="saveJournalEntries()">💾 Sauvegarder le journal</button>
+  </div>
 </div>
 
 <!-- ══ REPLACE MEAL MODAL ══════════════════════════════════════════ -->
@@ -681,13 +770,15 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
       <div>
         <div class="hero-label">Planification diététique familiale</div>
         <h1>Menus de la famille</h1>
-        <div class="hero-sub">Équilibré · De saison · Adapté APLV Simon</div>
+        <div class="hero-sub">Équilibré · De saison · Adapté APLV Simon <span class="season-badge" id="season-badge"></span></div>
       </div>
       <div class="hero-right">
         <div class="hero-action-btns">
           <button class="hero-btn" onclick="goHome()">🏠 Accueil</button>
           <button class="hero-btn" onclick="openHistory()">📚 Historique</button>
           <button class="hero-btn" onclick="openNutritionModal()">📊 Nutrition</button>
+          <button class="hero-btn" onclick="openPrefsModal()">❤ Préférences</button>
+          <button class="hero-btn" onclick="openJournalModal()">📔 Journal</button>
           <button class="hero-btn" id="login-hero-btn" onclick="openLoginModal()">👤 Compte</button>
           <button class="hero-btn" id="apikey-hero-btn" onclick="showApiKeyModal()">🔑 Clé API</button>
           <button class="hero-btn primary" onclick="openGenModal()">✨ Nouvelle semaine</button>
@@ -743,6 +834,7 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
       <div class="portions-notice">Quantités pour <span id="portions-recipe-label">4 personnes</span></div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <div style="font-size:12px;color:var(--text3)">Basculez le mode par recette ↓</div>
+        <button class="shop-btn shop-btn-outline" onclick="generateAllMissingRecipes()" id="gen-all-recipes-btn" style="font-size:12px;padding:7px 14px;">✨ Générer manquantes</button>
         <button class="shop-btn shop-btn-outline" onclick="exportRecipesPDF()" style="font-size:12px;padding:7px 14px;">📄 Export PDF</button>
       </div>
     </div>
@@ -834,7 +926,7 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
 
   let _db = null;
   let _firebaseReady = false;
-  const FAMILY_ID = 'famille_bainchi'; // identifiant unique de votre famille
+  var FAMILY_ID = 'famille_bainchi'; // identifiant unique de votre famille
   function getFamilyPath(){ return FAMILY_ID; } // shared family data
 
   let _auth = null;
@@ -962,6 +1054,26 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
     } catch(e) { return null; }
   };
 
+  // Person preferences sync
+  window.fbSavePersonPrefs = async function(data) {
+    if(!_firebaseReady || !_db) return;
+    try{ await set(ref(_db, `${FAMILY_ID}/person_prefs`), data); }catch(e){}
+  };
+  window.fbLoadPersonPrefs = async function() {
+    if(!_firebaseReady || !_db) return null;
+    try{ const s=await get(ref(_db,`${FAMILY_ID}/person_prefs`)); return s.exists()?s.val():null; }catch(e){ return null; }
+  };
+
+  // Journal sync
+  window.fbSaveJournal = async function(data) {
+    if(!_firebaseReady || !_db) return;
+    try{ await set(ref(_db, `${FAMILY_ID}/journal`), data); }catch(e){}
+  };
+  window.fbLoadJournal = async function() {
+    if(!_firebaseReady || !_db) return null;
+    try{ const s=await get(ref(_db,`${FAMILY_ID}/journal`)); return s.exists()?s.val():null; }catch(e){ return null; }
+  };
+
   // API Key stored under family path (shared between all family devices)
   window.fbSaveApiKey = async function(key) {
     if(!_firebaseReady || !_db) return;
@@ -999,7 +1111,7 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
 
 <script>
 // ══ STATIC RECIPE DATA (TM31 + Classique) ══════════════════════
-const STATIC_RECETTES = [
+var STATIC_RECETTES = [
   {nom:"Filet de poisson rôti aux asperges et pommes de terre",temps:"25 min",tmTemps:"20 min",tags:["Saison","Équilibré"],
    ingredients:[{q:600,u:"g",n:"filet de lieu ou cabillaud"},{q:500,u:"g",n:"asperges vertes fraîches"},{q:600,u:"g",n:"pommes de terre grenaille"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"citron"},{q:1,u:"",n:"sel, poivre, herbes de Provence"}],
    etapes:["Préchauffer le four à 200°C.","Laver pommes de terre et asperges. Couper asperges aux 2/3.","Disposer légumes sur plateau huilé, sel, poivre. Enfourner 15 min.","Ajouter filets de poisson, citron, herbes. Cuire 10 min supplémentaires.","Servir chaud."],
@@ -1038,7 +1150,7 @@ const STATIC_RECETTES = [
    simon:"Préparer SANS crème. Roux uniquement huile + bouillon. Parfait pour Simon ainsi."}
 ];
 
-const STATIC_COURSES = {
+var STATIC_COURSES = {
   "Fruits et légumes":[{n:"Asperges vertes",q:1,u:"kg"},{n:"Pommes de terre grenaille",q:800,u:"g"},{n:"Carottes",q:2,u:"kg"},{n:"Courge butternut",q:800,u:"g"},{n:"Oignons",q:800,u:"g"},{n:"Haricots verts",q:400,u:"g"},{n:"Courgettes",q:2,u:""},{n:"Épinards frais",q:300,u:"g"},{n:"Patates douces",q:600,u:"g"},{n:"Poireaux",q:4,u:""},{n:"Citrons",q:3,u:""},{n:"Champignons de Paris",q:200,u:"g"},{n:"Brocoli",q:600,u:"g"},{n:"Petits pois frais",q:150,u:"g"},{n:"Oignons verts",q:1,u:"botte"},{n:"Basilic frais",q:1,u:"botte"},{n:"Thym frais",q:1,u:"botte"}],
   "Viandes et poissons":[{n:"Filet de lieu ou cabillaud",q:600,u:"g"},{n:"Poulet fermier 1,2kg",q:2,u:""},{n:"Filet de poisson blanc",q:500,u:"g"},{n:"Steak haché 5% MG",q:600,u:"g"},{n:"Escalopes de veau",q:480,u:"g"},{n:"Filet de saumon",q:600,u:"g"},{n:"Côtes de porc fermier",q:720,u:"g"},{n:"Veau en cubes",q:800,u:"g"}],
   "Épicerie":[{n:"Petites pâtes",q:700,u:"g"},{n:"Pâtes fraîches",q:400,u:"g"},{n:"Sauce tomate",q:400,u:"ml"},{n:"Riz long grain",q:250,u:"g"},{n:"Riz jasmin thaï",q:250,u:"g"},{n:"Lentilles corail",q:250,u:"g"},{n:"Huile d'olive",q:750,u:"ml"},{n:"Farine",q:200,u:"g"},{n:"Ail",q:1,u:"tête"},{n:"Olives vertes",q:120,u:"g"}],
@@ -1046,8 +1158,8 @@ const STATIC_COURSES = {
   "Produits frais & laitiers":[{n:"Œufs fermiers",q:12,u:""},{n:"Yaourt nature",q:500,u:"g"},{n:"Beurre doux",q:250,u:"g"},{n:"Lait entier",q:1,u:"L"}],
   "Bouillons & condiments":[{n:"Bouillon volaille",q:2,u:"L"},{n:"Herbes de Provence",q:1,u:"pot"},{n:"Sel fin",q:1,u:""},{n:"Poivre",q:1,u:""}]
 };
-const DEDUPS=["Carottes : 2kg total (4 recettes)","Oignons : 800g total (5 recettes)","Huile d'olive : 750ml total","Bouillon volaille : 2L total (4 recettes)","Petites pâtes : 700g total (3 recettes)"];
-const CAT_ICONS={"Fruits et légumes":"🥦","Viandes et poissons":"🥩","Épicerie":"🧴","Sans lactose pour Simon":"🌿","Produits frais & laitiers":"🧀","Bouillons & condiments":"🥄"};
+var DEDUPS=["Carottes : 2kg total (4 recettes)","Oignons : 800g total (5 recettes)","Huile d'olive : 750ml total","Bouillon volaille : 2L total (4 recettes)","Petites pâtes : 700g total (3 recettes)"];
+var CAT_ICONS={"Fruits et légumes":"🥦","Viandes et poissons":"🥩","Épicerie":"🧴","Sans lactose pour Simon":"🌿","Produits frais & laitiers":"🧀","Bouillons & condiments":"🥄"};
 
 // ══ STATE ══════════════════════════════════════════════════════
 let currentPortions=4, globalMode='classic', recipeMode={};
@@ -1056,8 +1168,8 @@ let currentWeekKey=null; // key of currently displayed week
 let genPrefs=new Set(['equilibre','saison','restes']);
 let pendingGenWeekKey=null;
 
-const STORAGE_PREFIX='menusfamille_week_';
-const BASE_DATE=new Date('2026-04-28'); // Monday
+var STORAGE_PREFIX='menusfamille_week_';
+covarASE_DATE=new Date('2026-04-28'); // Monday
 
 // ══ WEEK UTILS ═════════════════════════════════════════════════
 function getMondayOfWeek(offset){
@@ -1179,6 +1291,9 @@ function saveApiKey(){
   closeApiKeyModal();
   updateApiKeyStatus();
   updateLoginStatus();
+  // Set season badge immediately
+  const sb = document.getElementById('season-badge');
+  if(sb) sb.textContent = getSeasonIcon() + ' ' + getCurrentSeason();
 
   // Listen for auth state changes
   window._onAuthReady = async (user) => {
@@ -1357,11 +1472,12 @@ function displayWeek(key){
       // Create a basic recipe stub for unmatched dinners
       r = {
         nom: dinnerName,
-        temps: '30 min',
-        tmTemps: '25 min',
-        tags: ['Saison','Équilibré'],
-        ingredients: [{q:1,u:'',n:'Voir détails de la recette'}],
-        etapes: ['Préparer les ingrédients selon vos habitudes.','Cuire et assaisonner à votre goût.','Servir chaud avec les accompagnements.'],
+        isStub: true,
+        temps: '—',
+        tmTemps: '—',
+        tags: ['À générer'],
+        ingredients: [{q:1,u:'',n:'Recette à générer par l\'IA'}],
+        etapes: ['Cliquez sur Générer pour créer cette recette avec l\'IA automatiquement.'],
         tmEtapes: [{badge:'Bol',text:'Adapter selon les ingrédients.'},{badge:'Fin',text:'Servir chaud.'}],
         tmTip: 'Adaptez la recette à votre TM31 selon les ingrédients.',
         simon: "Vérifier l'absence de lait animal. Adapter si nécessaire."
@@ -1395,6 +1511,9 @@ function displayWeek(key){
   // Init real-time courses sync
   _coursesChecked = {};
   setTimeout(()=>initCoursesSync(key), 500);
+  // Update season badge
+  const sb = document.getElementById('season-badge');
+  if(sb) sb.textContent = getSeasonIcon() + ' ' + getCurrentSeason();
 }
 
 function changeWeek(dir){
@@ -1437,7 +1556,7 @@ function toggleGenPref(el,key){
 }
 
 // ══ GENERATION ════════════════════════════════════════════════
-const LOADING_STEPS=[
+consvarDING_STEPS=[
   'Analyse de la saison et des préférences…',
   'Composition des repas équilibrés…',
   'Calcul des restes et des midis…',
@@ -1477,9 +1596,18 @@ async function generateMenusForWeek(weekKey, prefs){
   const antiRepeat = recentMeals.length > 0
     ? '\nPlats déjà servis ces 4 dernières semaines (ÉVITER les répétitions): ' + recentMeals.slice(0,20).join(', ') + '.'
     : '';
+  // Auto-season detection
+  const saison = getCurrentSeason();
+  const saisonIcon = getSeasonIcon();
+  const saisonProduits = getSeasonProducts();
+  const saisonNote = '\nSaison actuelle: ' + saison + ' ' + saisonIcon + '. Privilégier: ' + saisonProduits;
+  // Person preferences
+  const personPrefsNote = buildPersonPrefsPrompt() ? '\n' + buildPersonPrefsPrompt() : '';
+  // Journal insights
+  const journalNote = buildJournalPrompt() ? '\n' + buildJournalPrompt() : '';
   const prompt=`Tu es un diététicien expert. Génère un planning de menus en JSON compact.
 Famille: Geoffrey, Marianne (adultes), Simon 3½ ans APLV (zéro lait animal), Diane 2 ans.
-Mois: ${month}. Préférences: ${prefsStr}.${memNote}${antiRepeat}
+Mois: ${month}. Préférences: ${prefsStr}.${memNote}${antiRepeat}${saisonNote}${personPrefsNote}${journalNote}
 Règles midis: Lundi=restes dim, Mardi=restes lun, Mercredi=cuisiné, Jeudi=restes mer, Vendredi=restes jeu, Samedi=cuisiné, Dimanche=cuisiné.
 
 Réponds UNIQUEMENT en JSON valide sans backticks ni texte autour:
@@ -1634,7 +1762,7 @@ function deleteFromHistory(key){
 // 20 SEMAINES DE MENUS — Mai à Septembre 2026
 // Famille : Geoffrey, Marianne, Simon (APLV), Diane
 
-const WEEKS_DATA = [
+var WEEKS_DATA = [
 
 // ═══ SEMAINE 1 — 4 mai 2026 ═══
 {
@@ -1888,7 +2016,7 @@ courses:{"Fruits et légumes":["Courge butternut 1,5kg","Champignons 500g","Châ
 if(typeof module !== 'undefined') module.exports = WEEKS_DATA;
 
 // ══ RECETTES PARTAGÉES — Pool commun pour toutes les semaines ══════════
-const SHARED_RECETTES = [
+var SHARED_RECETTES = [
   {nom:"Risotto aux petits pois et menthe fraîche",temps:"30 min",tmTemps:"25 min",tags:["Saison","Végétarien"],
    ingredients:[{q:300,u:"g",n:"riz à risotto (Arborio)"},{q:300,u:"g",n:"petits pois frais ou surgelés"},{q:1,u:"",n:"oignon"},{q:1,u:"L",n:"bouillon légumes chaud"},{q:100,u:"ml",n:"vin blanc"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"menthe fraîche, sel, poivre"}],
    etapes:["Faire revenir l'oignon haché dans l'huile 2 min.","Ajouter le riz, nacrer 2 min. Déglacer au vin blanc.","Verser le bouillon louche par louche en remuant. Cuire 18 min.","Ajouter les petits pois les 5 dernières minutes.","Incorporer la menthe ciselée hors du feu."],
@@ -2041,7 +2169,7 @@ const SHARED_RECETTES = [
 // ══ ACTIVE RECIPES (set when a week is loaded) ════════════════
 
 // ══ RAYON ORDER (Leclerc optimisé) ═════════════════════════════
-const RAYON_ORDER = [
+var RAYON_ORDER = [
   "Fruits et légumes",
   "Viandes et poissons",
   "Produits frais & laitiers",
@@ -2054,7 +2182,7 @@ const RAYON_ORDER = [
 ];
 
 // Prix moyens estimés par article (€) — base Leclerc Drive
-const PRIX_MOYENS = {
+var PRIX_MOYENS = {
   // Fruits & légumes
   "Asperges":3.5,"Pommes de terre":2.5,"Carottes":1.8,"Courgettes":2.0,
   "Tomates":2.5,"Poivrons":2.8,"Aubergines":2.2,"Haricots verts":2.5,
@@ -2188,6 +2316,28 @@ function renderRecipes(){
 function renderRecipeCardHTML(i){
   const r=activeRecettes[i];
   if(!r) return '';
+
+  // If stub recipe, show generate button
+  if(r.isStub){
+    return `<div class="recipe-card" id="rc-${i}">
+      <div class="recipe-head" onclick="toggleRecipe(${i})">
+        <div style="flex:1">
+          <div class="recipe-title">${r.nom} <span class="recipe-badge-new">✨ À générer</span></div>
+          <div class="recipe-tags"><span class="rtag" style="background:var(--amber-pale);color:#7A5C10;">Recette manquante</span></div>
+        </div>
+      </div>
+      <div class="recipe-body" id="rb-${i}" style="display:block">
+        <div class="recipe-stub-notice">
+          Cette recette n'est pas encore dans le livret. Générez-la automatiquement avec l'IA en un clic !
+        </div>
+        <div id="recipe-gen-status-${i}"></div>
+        <button class="recipe-gen-btn" id="recipe-gen-btn-${i}" onclick="generateMissingRecipe(${i})">
+          ✨ Générer la recette complète
+        </button>
+      </div>
+    </div>`;
+  }
+
   const isTM=getRecipeMode(i)==='tm';
   const timeLabel=isTM?r.tmTemps:r.temps;
   const wasOpen=document.getElementById('rb-'+i)?.classList.contains('open');
@@ -2976,7 +3126,7 @@ async function exportRecipesPDF(){
 }
 
 // ══ NUTRITION ANALYSIS ═══════════════════════════════════════════
-const NUTRITION_DB = {
+var NUTRITION_DB = {
   'poisson':      {proteines:22, glucides:0,  lipides:5,  fibres:0,  color:'#378ADD'},
   'viande':       {proteines:25, glucides:0,  lipides:10, fibres:0,  color:'#C05A32'},
   'légumes':      {proteines:2,  glucides:8,  lipides:0,  fibres:3,  color:'#4A7055'},
@@ -3121,6 +3271,405 @@ function renderNutritionContent(){
 
 // ══ ANTI-REPETITION (inject into gen prompt) ══════════════════════
 // Already integrated via getRecentMeals() called in prompt generation
+
+
+// ══ SAISON AUTOMATIQUE ═══════════════════════════════════════════
+var SAISONS = {
+  'décembre':'hiver','janvier':'hiver','février':'hiver',
+  'mars':'printemps','avril':'printemps','mai':'printemps',
+  'juin':'été','juillet':'été','août':'été',
+  'septembre':'automne','octobre':'automne','novembre':'automne'
+};
+var SAISON_ICONS = {'hiver':'❄️','printemps':'🌸','été':'☀️','automne':'🍂'};
+var SAISON_PRODUITS = {
+  'hiver':'choux, poireaux, navets, endives, courges, agrumes, pommes, poires. Éviter: tomates, courgettes, aubergines.',
+  'printemps':'asperges, petits pois, épinards, radis, fraises, artichauts. Éviter: courges, poireaux.',
+  'été':'tomates, courgettes, aubergines, poivrons, haricots verts, pêches, abricots, melons.',
+  'automne':'champignons, courges, pommes, poires, raisins, châtaignes, céleris, poireaux.'
+};
+
+function getCurrentSeason(){
+  const month = new Date().toLocaleDateString('fr-FR',{month:'long'}).toLowerCase();
+  return SAISONS[month] || 'printemps';
+}
+function getSeasonProducts(){
+  return SAISON_PRODUITS[getCurrentSeason()] || '';
+}
+function getSeasonIcon(){
+  return SAISON_ICONS[getCurrentSeason()] || '🌿';
+}
+
+// ══ PERSON PREFERENCES ═══════════════════════════════════════════
+var PERSONS = [
+  {id:'geoffrey', name:'Geoffrey', emoji:'👨', color:'#4A7055'},
+  {id:'marianne', name:'Marianne', emoji:'👩', color:'#C05A32'},
+  {id:'simon',    name:'Simon',   emoji:'👦', color:'#EF9F27'},
+  {id:'diane',    name:'Diane',   emoji:'👧', color:'#378ADD'}
+];
+
+function getPersonPrefs(){
+  try{
+    var s = localStorage.getItem('menusfamille_person_prefs');
+    return s ? JSON.parse(s) : {};
+  }catch(e){ return window._personPrefsMem || {}; }
+}
+function savePersonPrefsData(data){
+  window._personPrefsMem = data;
+  try{ localStorage.setItem('menusfamille_person_prefs', JSON.stringify(data)); }catch(e){}
+  if(window.fbIsReady && window.fbIsReady() && window.fbSavePersonPrefs)
+    window.fbSavePersonPrefs(data);
+}
+
+var _currentPrefType = {}; // per-person: 'like' or 'dislike'
+
+function openPrefsModal(){
+  renderPrefsModal();
+  document.getElementById('prefs-modal').classList.add('active');
+}
+function closePrefsModal(){
+  document.getElementById('prefs-modal').classList.remove('active');
+}
+
+function renderPrefsModal(){
+  var data = getPersonPrefs();
+  var container = document.getElementById('prefs-persons-list');
+  container.innerHTML = '';
+  PERSONS.forEach(function(person){
+    var prefs = data[person.id] || {likes:[], dislikes:[]};
+    var type = _currentPrefType[person.id] || 'dislike';
+    var div = document.createElement('div');
+    div.className = 'person-prefs';
+    div.innerHTML =
+      '<div class="person-prefs-head">' +
+        '<div class="person-avatar" style="background:' + person.color + '22;">' + person.emoji + '</div>' +
+        '<div class="person-prefs-name">' + person.name + '</div>' +
+      '</div>' +
+      '<div class="person-prefs-body">' +
+        '<div class="prefs-type-btns" id="ptb-' + person.id + '">' +
+          '<button class="prefs-type-btn ' + (type==='like'?'active-like':'') + '" data-person="' + person.id + '" data-type="like" onclick="setPersonPrefType(this)">❤ Aime</button>' +
+          '<button class="prefs-type-btn ' + (type==='dislike'?'active-dislike':'') + '" data-person="' + person.id + '" data-type="dislike" onclick="setPersonPrefType(this)">✗ Aime pas</button>' +
+        '</div>' +
+        '<div class="prefs-tag-input">' +
+          '<input class="prefs-tag-field" id="pref-input-' + person.id + '" placeholder="Ex: endives, foie..." data-person="' + person.id + '">' +
+          '<button class="prefs-add-btn" data-person="' + person.id + '" onclick="addPersonPref(this.dataset.person)">+ Ajouter</button>' +
+        '</div>' +
+        '<div class="prefs-tags" id="prefs-tags-' + person.id + '"></div>' +
+      '</div>';
+    container.appendChild(div);
+    // Add keydown for Enter key
+    var inp = div.querySelector('#pref-input-' + person.id);
+    if(inp) inp.addEventListener('keydown', function(e){ if(e.key==='Enter') addPersonPref(this.dataset.person); });
+    // Add tags
+    var tagsDiv = div.querySelector('#prefs-tags-' + person.id);
+    (prefs.dislikes||[]).forEach(function(item){
+      var span = document.createElement('span');
+      span.className = 'prefs-tag naime-pas';
+      span.innerHTML = '✗ ' + item;
+      var btn = document.createElement('button');
+      btn.className = 'prefs-tag-del';
+      btn.textContent = '×';
+      btn.dataset.person = person.id;
+      btn.dataset.type = 'dislike';
+      btn.dataset.item = item;
+      btn.onclick = function(){ removePersonPref(this.dataset.person, this.dataset.type, this.dataset.item); };
+      span.appendChild(btn);
+      tagsDiv.appendChild(span);
+    });
+    (prefs.likes||[]).forEach(function(item){
+      var span = document.createElement('span');
+      span.className = 'prefs-tag aime';
+      span.innerHTML = '❤ ' + item;
+      var btn = document.createElement('button');
+      btn.className = 'prefs-tag-del';
+      btn.textContent = '×';
+      btn.dataset.person = person.id;
+      btn.dataset.type = 'like';
+      btn.dataset.item = item;
+      btn.onclick = function(){ removePersonPref(this.dataset.person, this.dataset.type, this.dataset.item); };
+      span.appendChild(btn);
+      tagsDiv.appendChild(span);
+    });
+  });
+}
+
+function setPersonPrefType(btn){
+  var personId = btn.dataset.person;
+  var type = btn.dataset.type;
+  _currentPrefType[personId] = type;
+  var container = btn.closest('.prefs-type-btns');
+  container.querySelectorAll('.prefs-type-btn').forEach(function(b){
+    b.className = 'prefs-type-btn';
+  });
+  btn.className = 'prefs-type-btn ' + (type==='like'?'active-like':'active-dislike');
+}
+
+function addPersonPref(personId){
+  var input = document.getElementById('pref-input-'+personId);
+  var val = input.value.trim();
+  if(!val) return;
+  var type = _currentPrefType[personId] || 'dislike';
+  var data = getPersonPrefs();
+  if(!data[personId]) data[personId] = {likes:[], dislikes:[]};
+  if(!data[personId][type+'s']) data[personId][type+'s'] = [];
+  if(!data[personId][type+'s'].includes(val)){
+    data[personId][type+'s'].push(val);
+    savePersonPrefsData(data);
+  }
+  input.value = '';
+  renderPrefsModal();
+}
+
+function removePersonPref(personId, type, item){
+  var data = getPersonPrefs();
+  if(!data[personId]) return;
+  var arr = data[personId][type+'s'] || [];
+  data[personId][type+'s'] = arr.filter(function(x){ return x !== item; });
+  savePersonPrefsData(data);
+  renderPrefsModal();
+}
+
+function savePersonPrefs(){
+  closePrefsModal();
+  showToast('✅ Préférences sauvegardées — utilisées pour la prochaine génération');
+}
+
+function buildPersonPrefsPrompt(){
+  var data = getPersonPrefs();
+  var lines = [];
+  PERSONS.forEach(function(person){
+    var prefs = data[person.id];
+    if(!prefs) return;
+    if(prefs.dislikes && prefs.dislikes.length)
+      lines.push(person.name + ' naime pas: ' + prefs.dislikes.join(', '));
+    if(prefs.likes && prefs.likes.length)
+      lines.push(person.name + ' aime particulièrement: ' + prefs.likes.join(', '));
+  });
+  return lines.length ? 'Préférences individuelles: ' + lines.join('. ') + '.' : '';
+}
+
+// ══ JOURNAL ALIMENTAIRE ══════════════════════════════════════════
+function getJournal(){
+  try{
+    var s = localStorage.getItem('menusfamille_journal');
+    return s ? JSON.parse(s) : {};
+  }catch(e){ return window._journalMem || {}; }
+}
+function saveJournalData(data){
+  window._journalMem = data;
+  try{ localStorage.setItem('menusfamille_journal', JSON.stringify(data)); }catch(e){}
+  if(window.fbIsReady && window.fbIsReady() && window.fbSaveJournal)
+    window.fbSaveJournal(data);
+}
+
+function openJournalModal(){
+  renderJournalModal();
+  document.getElementById('journal-modal').classList.add('active');
+}
+function closeJournalModal(){
+  document.getElementById('journal-modal').classList.remove('active');
+}
+
+function renderJournalModal(){
+  var weekData = currentWeekKey ? loadWeek(currentWeekKey) : null;
+  var journal = getJournal();
+  var weekJournal = journal[currentWeekKey] || {};
+  var html = '';
+  if(!weekData || !weekData.jours){
+    document.getElementById('journal-content').innerHTML =
+      '<p style="color:var(--text2);font-size:13px;">Naviguez vers une semaine pour enregistrer le journal.</p>';
+    return;
+  }
+  var dt = new Date(currentWeekKey);
+  weekData.jours.forEach(function(jour, di){
+    var dayJournal = weekJournal[jour.jour] || {};
+    var d = new Date(dt);
+    d.setDate(d.getDate() + di);
+    var dateStr = d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    html += '<div class="journal-day">' +
+      '<div class="journal-day-head">' +
+        '<span class="journal-day-name">' + jour.jour + '</span>' +
+        '<span class="journal-day-date">' + dateStr + '</span>' +
+      '</div>' +
+      '<div class="journal-slots">';
+
+    ['midi','soir'].forEach(function(slot){
+      var planned = jour[slot] && jour[slot].nom ? jour[slot].nom : '—';
+      var entry = dayJournal[slot] || {};
+      var ate = entry.ate !== false;
+      var actual = entry.actual || '';
+      html +=
+        '<div class="journal-slot">' +
+          '<span class="journal-slot-label">' + (slot==='midi'?'🌤 Midi':'🌙 Soir') + '</span>' +
+          '<div>' +
+            '<div class="journal-slot-planned">Prévu : ' + planned.slice(0,40) + '</div>' +
+            '<input class="journal-slot-actual" id="j-'+jour.jour+'-'+slot+'" placeholder="Ce que vous avez mangé (laisser vide = prévu)" value="'+actual+'">' +
+          '</div>' +
+          '<label class="journal-ate-it">' +
+            '<input type="checkbox" id="jc-'+jour.jour+'-'+slot+'" '+(ate?'checked':'')+' onchange=""> 😋' +
+          '</label>' +
+        '</div>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('journal-content').innerHTML = html;
+}
+
+function saveJournalEntries(){
+  var weekData = currentWeekKey ? loadWeek(currentWeekKey) : null;
+  if(!weekData || !weekData.jours){ closeJournalModal(); return; }
+  var journal = getJournal();
+  if(!journal[currentWeekKey]) journal[currentWeekKey] = {};
+  weekData.jours.forEach(function(jour){
+    if(!journal[currentWeekKey][jour.jour]) journal[currentWeekKey][jour.jour] = {};
+    ['midi','soir'].forEach(function(slot){
+      var input = document.getElementById('j-'+jour.jour+'-'+slot);
+      var check = document.getElementById('jc-'+jour.jour+'-'+slot);
+      if(input){
+        journal[currentWeekKey][jour.jour][slot] = {
+          planned: jour[slot] && jour[slot].nom ? jour[slot].nom : '',
+          actual: input.value.trim(),
+          ate: check ? check.checked : true,
+          savedAt: new Date().toISOString()
+        };
+      }
+    });
+  });
+  saveJournalData(journal);
+  closeJournalModal();
+  showToast('📔 Journal sauvegardé !');
+}
+
+function buildJournalPrompt(){
+  var journal = getJournal();
+  var entries = [];
+  Object.entries(journal).slice(-3).forEach(function(kv){
+    Object.entries(kv[1]).forEach(function(dayKv){
+      Object.entries(dayKv[1]).forEach(function(slotKv){
+        var e = slotKv[1];
+        if(e.actual && e.actual !== e.planned)
+          entries.push('Remplacé "'+e.planned.slice(0,25)+'" par "'+e.actual.slice(0,25)+'"');
+        if(!e.ate && e.planned)
+          entries.push('Pas mange: '+e.planned.slice(0,25));
+      });
+    });
+  });
+  return entries.length ? 'Journal des 3 dernières semaines: ' + entries.slice(0,8).join('; ') + '.' : '';
+}
+
+// ══ RECIPE GENERATOR ════════════════════════════════════════════
+async function generateMissingRecipe(idx){
+  if(!hasApiKey()){ showApiKeyModal(); return; }
+  const recipe = activeRecettes[idx];
+  if(!recipe) return;
+
+  const btn = document.getElementById('recipe-gen-btn-'+idx);
+  const statusEl = document.getElementById('recipe-gen-status-'+idx);
+  if(btn) btn.disabled = true;
+  if(statusEl) statusEl.innerHTML = '<div class="recipe-generating"><div class="recipe-gen-dot"></div>Génération en cours...</div>';
+
+  const prompt = `Tu es un chef cuisinier et diététicien. Génère une recette complète pour: "${recipe.nom}".
+Famille: Geoffrey, Marianne (adultes), Simon 3½ ans APLV (zéro lait animal, zéro fromage, zéro beurre, zéro crème animale), Diane 2 ans.
+La recette doit être équilibrée, savoureuse et adaptable au TM31 Thermomix.
+
+Réponds UNIQUEMENT en JSON valide sans backticks:
+{
+  "temps": "25 min",
+  "tmTemps": "20 min",
+  "tags": ["Saison","Équilibré"],
+  "ingredients": [
+    {"q": 600, "u": "g", "n": "nom ingrédient"},
+    {"q": 2, "u": "", "n": "ingrédient sans unité"}
+  ],
+  "etapes": [
+    "Étape 1 détaillée.",
+    "Étape 2 détaillée.",
+    "Étape 3 détaillée."
+  ],
+  "tmEtapes": [
+    {"badge": "Bol", "text": "Instructions TM31 étape 1."},
+    {"badge": "Varoma", "text": "Instructions TM31 étape 2."},
+    {"badge": "Fin", "text": "Servir."}
+  ],
+  "tmTip": "Conseil spécifique TM31.",
+  "simon": "Adaptation APLV pour Simon ou aucune adaptation nécessaire."
+}`;
+
+  try {
+    const apiKey = getApiKey();
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    const text = data.content.map(b => b.text || '').join('');
+    let jsonStr = text.trim().replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+    const s = jsonStr.indexOf('{'), e = jsonStr.lastIndexOf('}');
+    if(s >= 0 && e > s) jsonStr = jsonStr.slice(s, e+1);
+    const parsed = JSON.parse(jsonStr);
+
+    // Update the recipe in activeRecettes
+    activeRecettes[idx] = {
+      ...recipe,
+      isStub: false,
+      temps: parsed.temps || '30 min',
+      tmTemps: parsed.tmTemps || '25 min',
+      tags: parsed.tags || ['Équilibré'],
+      ingredients: parsed.ingredients || [],
+      etapes: parsed.etapes || [],
+      tmEtapes: parsed.tmEtapes || [],
+      tmTip: parsed.tmTip || '',
+      simon: parsed.simon || 'Vérifier absence de lait animal.',
+      generatedAt: new Date().toISOString()
+    };
+
+    // Save updated recipes to the week
+    if(currentWeekKey){
+      const weekData = loadWeek(currentWeekKey);
+      if(weekData){
+        weekData.recettes = activeRecettes;
+        saveWeek(currentWeekKey, weekData);
+      }
+    }
+
+    // Re-render this card
+    const cardEl = document.getElementById('rc-'+idx);
+    if(cardEl){
+      cardEl.outerHTML = renderRecipeCardHTML(idx);
+    } else {
+      renderRecipes();
+    }
+
+    showToast('✅ Recette générée : ' + recipe.nom.slice(0,25));
+
+  } catch(err) {
+    console.error('Recipe gen error:', err);
+    if(statusEl) statusEl.innerHTML = '<div style="color:var(--terracotta);font-size:12px;padding:8px;">Erreur — réessayez</div>';
+    if(btn){ btn.disabled = false; btn.textContent = '↺ Réessayer'; }
+  }
+}
+
+// Generate ALL missing recipes at once
+async function generateAllMissingRecipes(){
+  if(!hasApiKey()){ showApiKeyModal(); return; }
+  const stubs = activeRecettes.map((r,i) => ({r,i})).filter(({r}) => r.isStub);
+  if(!stubs.length){ showToast('Toutes les recettes sont complètes !'); return; }
+  showToast('Génération de ' + stubs.length + ' recette(s) en cours...');
+  for(const {i} of stubs){
+    await generateMissingRecipe(i);
+    await new Promise(r => setTimeout(r, 500)); // small delay between calls
+  }
+}
 
 function updateApiKeyStatus(){
   const has = hasApiKey();
