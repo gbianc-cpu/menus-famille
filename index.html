@@ -246,6 +246,21 @@ body{background:var(--cream);font-family:'Outfit',sans-serif;color:var(--text);m
 .shop-btn-outline{background:transparent;border:1.5px solid var(--forest);color:var(--forest);}
 .shop-btn-outline:hover{background:rgba(36,59,46,.06);}
 
+/* API KEY MODAL */
+#apikey-modal{background:rgba(0,0,0,.65);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.apikey-box{background:var(--warm);border-radius:16px;padding:2rem;width:90%;max-width:480px;box-shadow:var(--shadow-lg);}
+.apikey-title{font-family:'Lora',serif;font-size:20px;color:var(--forest);margin-bottom:6px;}
+.apikey-sub{font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.5;}
+.apikey-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--text);background:var(--cream);outline:none;margin-bottom:8px;}
+.apikey-input:focus{border-color:var(--forest);}
+.apikey-error{font-size:12px;color:var(--terracotta);margin-bottom:10px;min-height:16px;}
+.apikey-actions{display:flex;gap:10px;}
+.apikey-save{flex:2;padding:10px;background:var(--forest);border:none;border-radius:8px;color:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.apikey-save:hover{background:var(--forest-light);}
+.apikey-cancel{flex:1;padding:10px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;}
+.apikey-hint{font-size:11px;color:var(--text3);margin-top:10px;line-height:1.5;}
+.apikey-hint a{color:var(--forest);text-decoration:none;}
+
 /* COOK MODE */
 #cook-overlay{background:var(--forest);flex-direction:column;}
 .cook-header{padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.1);gap:12px;flex-wrap:wrap;}
@@ -296,6 +311,14 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
 
     <button class="home-gen-btn" onclick="openGenModal()">✨ Générer une nouvelle semaine</button>
     <button class="home-hist-btn" onclick="openHistory()">📚 Historique des semaines</button>
+
+    <div class="home-divider"></div>
+
+    <div id="home-apikey-status" style="font-size:12px;padding:8px 14px;border-radius:8px;margin-bottom:10px;text-align:center;"></div>
+    <button class="home-btn" style="margin-bottom:10px;" onclick="showApiKeyModal()">
+      <span class="home-btn-icon">🔑</span>
+      <div><div id="home-apikey-label">Configurer la clé API</div><div class="home-btn-sub">Pour générer de nouveaux menus</div></div>
+    </button>
 
     <div class="home-divider"></div>
 
@@ -365,6 +388,24 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
   <div class="history-content" id="history-content"></div>
 </div>
 
+<!-- ══ API KEY MODAL ══════════════════════════════════════════════ -->
+<div id="apikey-modal" class="overlay">
+  <div class="apikey-box">
+    <div class="apikey-title">🔑 Clé API Anthropic</div>
+    <div class="apikey-sub">Pour générer des menus originaux chaque semaine, entrez votre clé API Anthropic. Elle est stockée uniquement sur votre appareil et n'est jamais partagée.</div>
+    <input class="apikey-input" id="apikey-input" type="password" placeholder="sk-ant-api03-..." autocomplete="off" onkeydown="if(event.key==='Enter')saveApiKey()">
+    <div class="apikey-error" id="apikey-error"></div>
+    <div class="apikey-actions">
+      <button class="apikey-cancel" onclick="closeApiKeyModal()">Annuler</button>
+      <button class="apikey-save" onclick="saveApiKey()">💾 Enregistrer</button>
+    </div>
+    <div class="apikey-hint">
+      Créez votre clé gratuite sur <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key.<br>
+      ~0,03€ par génération de semaine. Votre clé reste privée sur votre appareil.
+    </div>
+  </div>
+</div>
+
 <!-- ══ COOK MODE ═════════════════════════════════════════════════ -->
 <div id="cook-overlay" class="overlay">
   <div class="cook-header">
@@ -403,6 +444,7 @@ footer{max-width:860px;margin:0 auto;padding:1.5rem;border-top:1px solid var(--b
         <div class="hero-action-btns">
           <button class="hero-btn" onclick="goHome()">🏠 Accueil</button>
           <button class="hero-btn" onclick="openHistory()">📚 Historique</button>
+          <button class="hero-btn" id="apikey-hero-btn" onclick="showApiKeyModal()">🔑 Clé API</button>
           <button class="hero-btn primary" onclick="openGenModal()">✨ Nouvelle semaine</button>
         </div>
         <div class="week-nav">
@@ -587,23 +629,64 @@ function fillWeekSelect(){
   }
 }
 
-// ══ STORAGE ════════════════════════════════════════════════════
+// ══ API KEY MANAGEMENT ══════════════════════════════════════════
+function getApiKey(){
+  try{ return localStorage.getItem('menusfamille_apikey') || ''; }
+  catch(e){ return _apiKeyMem || ''; }
+}
+function setApiKey(key){
+  _apiKeyMem = key;
+  try{ localStorage.setItem('menusfamille_apikey', key); }catch(e){}
+}
+let _apiKeyMem = '';
+
+function showApiKeyModal(){
+  document.getElementById('apikey-modal').classList.add('active');
+}
+function closeApiKeyModal(){
+  document.getElementById('apikey-modal').classList.remove('active');
+}
+function saveApiKey(){
+  const val = document.getElementById('apikey-input').value.trim();
+  if(!val || !val.startsWith('sk-ant-')){
+    document.getElementById('apikey-error').textContent = 'Clé invalide — doit commencer par sk-ant-';
+    return;
+  }
+  setApiKey(val);
+  document.getElementById('apikey-error').textContent = '';
+  document.getElementById('apikey-input').value = '';
+  closeApiKeyModal();
+  updateApiKeyStatus();
+  showToast('✓ Clé API enregistrée — vous pouvez générer vos menus !');
+}
+function clearApiKey(){
+  setApiKey('');
+  showToast('Clé API supprimée');
+}
+function hasApiKey(){ return !!getApiKey(); }
+
+// ══ STORAGE — In-memory (file://) + localStorage (web) ════════
+const _memStore = {};
 function saveWeek(key,data){
-  try{localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(data));}catch(e){showToast('Erreur de sauvegarde');}
+  _memStore[key]=data;
+  try{localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(data));}catch(e){}
 }
 function loadWeek(key){
-  try{const s=localStorage.getItem(STORAGE_PREFIX+key);return s?JSON.parse(s):null;}catch(e){return null;}
+  if(_memStore[key]) return _memStore[key];
+  try{const s=localStorage.getItem(STORAGE_PREFIX+key);
+    if(s){const d=JSON.parse(s);_memStore[key]=d;return d;}
+  }catch(e){}
+  return null;
 }
 function deleteWeek(key){
+  delete _memStore[key];
   try{localStorage.removeItem(STORAGE_PREFIX+key);}catch(e){}
 }
 function getAllWeekKeys(){
-  const keys=[];
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i);
-    if(k&&k.startsWith(STORAGE_PREFIX)) keys.push(k.replace(STORAGE_PREFIX,''));
-  }
-  return keys.sort().reverse(); // most recent first
+  const mk=Object.keys(_memStore);
+  const lk=[];
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(STORAGE_PREFIX))lk.push(k.replace(STORAGE_PREFIX,''));}}catch(e){}
+  return [...new Set([...mk,...lk])].sort().reverse(); // most recent first
 }
 
 // ══ HOME / NAV ═════════════════════════════════════════════════
@@ -630,11 +713,26 @@ function goTab(name,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById(name).classList.add('active');
+  // Re-render when switching tabs to ensure fresh data
+  if(name==='recettes') renderRecipes();
+  if(name==='courses' && currentWeekKey){
+    const d=loadWeek(currentWeekKey);
+    if(d) renderShopping(d.courses||STATIC_COURSES);
+  }
 }
 
 // ══ WEEK DISPLAY ══════════════════════════════════════════════
 function displayWeek(key){
-  const data=loadWeek(key);
+  // Always merge localStorage with WEEKS_DATA to ensure complete recipes
+  let data=loadWeek(key);
+  const preloaded = typeof WEEKS_DATA !== 'undefined' ? WEEKS_DATA.find(w=>w.weekKey===key) : null;
+  if(preloaded){
+    // Merge: use preloaded recettes if saved ones are missing or fewer
+    if(!data) data = preloaded;
+    else if(!data.recettes || !data.recettes.length){
+      data = {...data, recettes: preloaded.recettes||[], courses: data.courses||preloaded.courses||{}};
+    }
+  }
   currentWeekKey=key;
   const d=new Date(key);
   document.getElementById('week-label').textContent='Sem. '+fmtWeekShort(d);
@@ -661,8 +759,46 @@ function displayWeek(key){
   document.getElementById('week-meta-prefs').innerHTML=(data.prefs||[]).map(p=>`<span class="wpref">${p}</span>`).join('');
   document.getElementById('week-meta-date').textContent='Généré le '+new Date(data.savedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
 
-  // Load recipes for this week (generated or static fallback)
-  activeRecettes = data.recettes && data.recettes.length ? data.recettes : STATIC_RECETTES;
+  // Build recipe list from THIS week's dinners only
+  const allPool = [
+    ...(typeof STATIC_RECETTES !== 'undefined' ? STATIC_RECETTES : []),
+    ...(typeof SHARED_RECETTES !== 'undefined' ? SHARED_RECETTES : [])
+  ];
+
+  // Get dinner names from this week's jours
+  const weekDinnerNames = (data.jours||[]).map(j=>j.soir && j.soir.nom).filter(Boolean);
+
+  // Match recipes by name (exact or partial)
+  const matchedRecettes = weekDinnerNames.map(dinnerName => {
+    // Try exact match first
+    let r = allPool.find(rec => rec.nom === dinnerName);
+    if(!r){
+      // Try partial match (dinner name contains recipe name or vice versa)
+      r = allPool.find(rec =>
+        dinnerName.toLowerCase().includes(rec.nom.toLowerCase().slice(0,20)) ||
+        rec.nom.toLowerCase().includes(dinnerName.toLowerCase().slice(0,20))
+      );
+    }
+    if(!r){
+      // Create a basic recipe stub for unmatched dinners
+      r = {
+        nom: dinnerName,
+        temps: '30 min',
+        tmTemps: '25 min',
+        tags: ['Saison','Équilibré'],
+        ingredients: [{q:1,u:'',n:'Voir détails de la recette'}],
+        etapes: ['Préparer les ingrédients selon vos habitudes.','Cuire et assaisonner à votre goût.','Servir chaud avec les accompagnements.'],
+        tmEtapes: [{badge:'Bol',text:'Adapter selon les ingrédients.'},{badge:'Fin',text:'Servir chaud.'}],
+        tmTip: 'Adaptez la recette à votre TM31 selon les ingrédients.',
+        simon: "Vérifier l'absence de lait animal. Adapter si nécessaire."
+      };
+    }
+    return r;
+  });
+
+  // Remove duplicates
+  activeRecettes = matchedRecettes.filter((r,i,arr) => arr.findIndex(x=>x.nom===r.nom)===i);
+  console.log('Week',key,'recettes:',activeRecettes.length,'dinners:',weekDinnerNames.length);
   recipeMode = {}; // reset per-recipe TM overrides
 
   renderPlanning(data.jours, key);
@@ -687,6 +823,11 @@ function openGenModalForWeek(key){
 
 // ══ GENERATE MODAL ════════════════════════════════════════════
 function openGenModal(preselectedKey){
+  if(!hasApiKey()){
+    showApiKeyModal();
+    showToast("⚠ Configurez d'abord votre clé API pour générer des menus");
+    return;
+  }
   fillWeekSelect();
   if(preselectedKey){
     const sel=document.getElementById('gen-week-select');
@@ -737,50 +878,31 @@ async function generateMenusForWeek(weekKey, prefs){
   const weekStart=fmtWeekShort(d);
   const prefsStr=prefs.join(', ')||'équilibré';
 
-  const prompt=`Tu es un diététicien-nutritionniste expert. Génère un planning complet en JSON pour la semaine du ${weekStart} (mois de ${month}).
-Famille : Geoffrey (adulte), Marianne (adulte), Simon 3½ ans APLV (ZÉRO lait animal, fromage, beurre, yaourt, crème animale), Diane 2 ans.
-Préférences : ${prefsStr}.
-Règles midis :
-- Lundi midi : restes du dimanche soir (Geoffrey+Marianne+Simon)
-- Mardi midi : restes du lundi soir (Geoffrey+Marianne+Simon)
-- Mercredi midi : repas cuisiné pour tout le monde
-- Jeudi midi : restes du mercredi soir (Geoffrey+Marianne+Simon)
-- Vendredi midi : restes du jeudi soir (Geoffrey+Marianne+Simon)
-- Samedi et Dimanche midi : repas cuisiné pour tout le monde
-Prévoir des quantités suffisantes pour qu'il y ait des restes.
+  const prompt=`Tu es un diététicien expert. Génère un planning de menus en JSON compact.
+Famille: Geoffrey, Marianne (adultes), Simon 3½ ans APLV (zéro lait animal), Diane 2 ans.
+Mois: ${month}. Préférences: ${prefsStr}.
+Règles midis: Lundi=restes dim, Mardi=restes lun, Mercredi=cuisiné, Jeudi=restes mer, Vendredi=restes jeu, Samedi=cuisiné, Dimanche=cuisiné.
 
-Génère EXACTEMENT 7 recettes (une par dîner). Chaque recette doit avoir une version classique ET une version TM31 (Thermomix).
-
-Réponds UNIQUEMENT en JSON valide, sans texte, sans backticks :
-{
-  "jours":[{"jour":"Lundi","midi":{"nom":"...","note":"Restes de ...","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"..."}}],
-  "recettes":[{
-    "nom":"...",
-    "temps":"25 min",
-    "tmTemps":"20 min",
-    "tags":["Saison","Équilibré"],
-    "ingredients":[{"q":600,"u":"g","n":"filet de cabillaud"}],
-    "etapes":["Préchauffer le four à 200°C.","..."],
-    "tmEtapes":[{"badge":"Varoma","text":"Mettre 1L d'eau dans le bol..."},{"badge":"Fin","text":"Servir..."}],
-    "tmTip":"Conseil spécifique TM31...",
-    "simon":"Adaptation APLV ou aucune adaptation nécessaire."
-  }],
-  "courses":{
-    "Fruits et légumes":["Carottes 2kg","Courgettes x4"],
-    "Viandes et poissons":["Saumon 600g"],
-    "Épicerie":["Pâtes 500g","Riz 250g"],
-    "Sans lactose pour Simon":["Crème de riz 400ml"],
-    "Produits frais et laitiers":["Œufs x12","Beurre 250g"],
-    "Bouillons et condiments":["Bouillon volaille 2L","Herbes de Provence"]
-  }
-}`;
+Réponds UNIQUEMENT en JSON valide sans backticks ni texte autour:
+{"jours":[{"jour":"Lundi","midi":{"nom":"...","note":"Restes de ...","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"Cuisiné pour 4"}},{"jour":"Mardi","midi":{"nom":"...","note":"Restes du lundi","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"..."}},{"jour":"Mercredi","midi":{"nom":"...","note":"Repas cuisiné tout le monde","reste":false},"soir":{"nom":"...","note":"..."}},{"jour":"Jeudi","midi":{"nom":"...","note":"Restes du mercredi","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"..."}},{"jour":"Vendredi","midi":{"nom":"...","note":"Restes du jeudi","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"..."}},{"jour":"Samedi","midi":{"nom":"...","note":"Repas cuisiné tout le monde","reste":false},"soir":{"nom":"...","note":"..."}},{"jour":"Dimanche","midi":{"nom":"...","note":"Restes du samedi","reste":true},"soir":{"nom":"...","note":"..."}}],"courses":{"Fruits et légumes":["Tomates 500g","..."],"Viandes et poissons":["Poulet 1kg","..."],"Épicerie":["Pâtes 500g","..."],"Sans lactose pour Simon":["Crème de riz 400ml"],"Produits frais et laitiers":["Oeufs x12","..."],"Bouillons et condiments":["Herbes de Provence","..."]}}`;
 
   try {
-    const res=await fetch('/.netlify/functions/claude',{
-  method:'POST',
-  headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({messages:[{role:'user',content:prompt}]})
-});
+    const apiKey = getApiKey();
+    if(!apiKey){ showApiKeyModal(); throw new Error('Clé API non configurée'); }
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-haiku-4-5',
+        max_tokens:8000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
     const data=await res.json();
     console.log('API status:',res.status);
     console.log('API data:',JSON.stringify(data).slice(0,400));
@@ -789,27 +911,20 @@ Réponds UNIQUEMENT en JSON valide, sans texte, sans backticks :
     }
     const text=data.content.map(b=>b.text||'').join('');
     console.log('Raw text (500 chars):',text.slice(0,500));
-    // Extract JSON - try multiple strategies
+    // Clean markdown and extract JSON
     let parsed;
+    let jsonStr = text.trim();
+    // Remove ```json or ``` wrappers
+    jsonStr = jsonStr.replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+    // Find outermost { }
+    const jStart = jsonStr.indexOf('{');
+    const jEnd = jsonStr.lastIndexOf('}');
+    if(jStart >= 0 && jEnd > jStart) jsonStr = jsonStr.slice(jStart, jEnd+1);
     try {
-      // Strategy 1: direct parse
-      parsed = JSON.parse(text.trim());
-    } catch(e1) {
-      try {
-        // Strategy 2: extract from code block
-        const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if(match) { parsed = JSON.parse(match[1].trim()); }
-        else {
-          // Strategy 3: find first { to last }
-          const start = text.indexOf('{');
-          const end = text.lastIndexOf('}');
-          if(start>=0 && end>start) { parsed = JSON.parse(text.slice(start, end+1)); }
-          else throw new Error('Aucun JSON trouve dans: '+text.slice(0,200));
-        }
-      } catch(e2) {
-        console.error('Parse error:', e2.message, 'Text:', text.slice(0,300));
-        throw e2;
-      }
+      parsed = JSON.parse(jsonStr);
+    } catch(e) {
+      console.error('Parse error:', e.message, 'JSON:', jsonStr.slice(0,300));
+      throw new Error('Erreur JSON: '+e.message);
     }
     console.log('Parsed OK, jours:', parsed.jours?.length, 'recettes:', parsed.recettes?.length);
 
@@ -819,18 +934,10 @@ Réponds UNIQUEMENT en JSON valide, sans texte, sans backticks :
       coursesStructured[cat]=items.map(item=>typeof item==='string'?{n:item,q:1,u:''}:item);
     }
 
-    // Normalise recettes: ensure all fields exist (fallback to static if missing)
-    const recettes=(parsed.recettes||[]).map(r=>({
-      nom: r.nom||'Recette',
-      temps: r.temps||'30 min',
-      tmTemps: r.tmTemps||r.temps||'25 min',
-      tags: r.tags||['Équilibré'],
-      ingredients: (r.ingredients||[]).map(i=>typeof i==='string'?{n:i,q:1,u:''}:i),
-      etapes: r.etapes||['Préparer les ingrédients.','Cuire et servir.'],
-      tmEtapes: r.tmEtapes||[{badge:'Bol',text:'Adapter la recette classique au TM31.'},{badge:'Fin',text:'Servir chaud.'}],
-      tmTip: r.tmTip||'Cuisson douce au TM31 préservée.',
-      simon: r.simon||'Vérifier l\'absence de lait animal.'
-    }));
+    // Use shared recipe pool for generated weeks
+    const recettes = typeof SHARED_RECETTES !== 'undefined'
+      ? [...STATIC_RECETTES, ...SHARED_RECETTES.filter(r=>!STATIC_RECETTES.find(s=>s.nom===r.nom))]
+      : STATIC_RECETTES;
 
     const weekData={
       weekKey,
@@ -922,6 +1029,415 @@ function deleteFromHistory(key){
   renderHistory();
   showToast('Semaine supprimée');
 }
+
+
+// ══ PRE-GENERATED 20 WEEKS DATA ═══════════════════════════════
+// 20 SEMAINES DE MENUS — Mai à Septembre 2026
+// Famille : Geoffrey, Marianne, Simon (APLV), Diane
+
+const WEEKS_DATA = [
+
+// ═══ SEMAINE 1 — 4 mai 2026 ═══
+{
+  weekKey:"2026-05-04", label: "Semaine du 4 mai 2026", mois: "mai",
+  prefs: ["équilibré","saison","restes"],
+  jours: [
+    {jour:"Lundi",midi:{nom:"Restes : Poulet rôti aux herbes et légumes printaniers",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Filet de lieu vapeur, asperges et pommes de terre nouvelles",note:"Cuisiné pour 4 — restes mardi midi"}},
+    {jour:"Mardi",midi:{nom:"Filet de lieu vapeur, asperges et pommes de terre nouvelles",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Risotto aux petits pois et menthe fraîche",note:"Cuisiné pour 4"}},
+    {jour:"Mercredi",midi:{nom:"Salade de lentilles corail, carottes râpées et œuf dur",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Escalopes de dinde aux courgettes et riz basmati",note:"Cuisiné pour 4 — restes jeudi midi"}},
+    {jour:"Jeudi",midi:{nom:"Escalopes de dinde aux courgettes et riz basmati",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Soupe de courgettes, tartines et fromage frais",note:"Cuisiné pour 4 — restes vendredi midi"}},
+    {jour:"Vendredi",midi:{nom:"Soupe de courgettes et tartines",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Saumon en papillote citron-aneth, haricots verts",note:"Repas léger"}},
+    {jour:"Samedi",midi:{nom:"Frittata aux légumes printaniers et salade verte",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Gigot d'agneau, gratin dauphinois (sans crème pour Simon)",note:"Cuisiné pour 4 — restes dimanche midi"}},
+    {jour:"Dimanche",midi:{nom:"Gigot d'agneau et gratin dauphinois",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Poulet rôti aux herbes, légumes printaniers rôtis",note:"Grand repas dominical"}}
+  ],
+  recettes:[
+    {nom:"Filet de lieu vapeur, asperges et pommes de terre nouvelles",temps:"25 min",tmTemps:"20 min",tags:["Saison","Léger"],ingredients:[{q:600,u:"g",n:"filet de lieu"},{q:500,u:"g",n:"asperges vertes"},{q:600,u:"g",n:"pommes de terre nouvelles"},{q:2,u:"",n:"citrons"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"aneth frais, sel, poivre"}],etapes:["Cuire les pommes de terre nouvelles 15 min à la vapeur.","Cuire les asperges à la vapeur 8 min.","Pocher les filets de lieu dans un bouillon frémissant 8-10 min.","Arroser d'huile d'olive et citron. Parsemer d'aneth."],tmEtapes:[{badge:"Varoma",text:"Mettre 1L d'eau dans le bol. Pommes de terre dans le Varoma, asperges sur le plateau. Cuire 12 min / Varoma / vit 1."},{badge:"Varoma",text:"Poser les filets de lieu sur les asperges, citron, aneth. Cuire encore 10 min / Varoma / vit 1."},{badge:"Fin",text:"Arroser d'huile d'olive et servir depuis le Varoma."}],tmTip:"Cuisson douce préserve le moelleux du lieu.",simon:"Aucune adaptation. Retirer les arêtes."},
+    {nom:"Escalopes de dinde aux courgettes et riz basmati",temps:"25 min",tmTemps:"20 min",tags:["Rapide","Équilibré"],ingredients:[{q:600,u:"g",n:"escalopes de dinde"},{q:3,u:"",n:"courgettes"},{q:250,u:"g",n:"riz basmati"},{q:2,u:"",n:"gousses d'ail"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"herbes de Provence, sel, poivre"}],etapes:["Cuire le riz basmati 12 min.","Couper les courgettes en demi-lunes, sauter à l'ail 5 min.","Cuire les escalopes 4 min de chaque côté. Assaisonner.","Servir avec riz et courgettes."],tmEtapes:[{badge:"Bol",text:"Ail + huile dans le bol. 2 min / 120°C / vit 1. Ajouter courgettes en rondelles, riz, 500ml eau."},{badge:"Cuisson",text:"Cuire 13 min / 100°C / sens inverse / vit 1."},{badge:"Fin",text:"Pendant la cuisson, poêler les escalopes 4 min de chaque côté. Servir avec riz et courgettes."}],tmTip:"Riz et légumes en un seul bol pendant que vous poêlez la dinde.",simon:"Aucune adaptation."},
+    {nom:"Saumon en papillote citron-aneth, haricots verts",temps:"25 min",tmTemps:"20 min",tags:["Saison","Oméga 3"],ingredients:[{q:600,u:"g",n:"filet de saumon"},{q:500,u:"g",n:"haricots verts"},{q:2,u:"",n:"citrons"},{q:1,u:"",n:"botte d'aneth"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"sel, poivre"}],etapes:["Préchauffer le four à 200°C.","Placer chaque portion de saumon sur une feuille de papier sulfurisé. Citron, aneth, huile, sel.","Fermer les papillotes et enfourner 18 min.","Cuire les haricots verts à la vapeur 8 min. Servir."],tmEtapes:[{badge:"Varoma",text:"Mettre 1L d'eau. Haricots verts dans le Varoma, saumon avec citron et aneth sur le plateau. Cuire 15 min / Varoma / vit 1."}],tmTip:"La papillote Varoma garde tous les arômes — résultat identique au four.",simon:"Aucune adaptation. Excellentes oméga-3."}
+  ],
+  courses:{
+    "Fruits et légumes":["Asperges vertes 500g","Pommes de terre nouvelles 600g","Courgettes 6","Haricots verts 500g","Carottes 500g","Petits pois frais 300g","Salade verte 1","Aneth frais 2 bottes","Menthe fraîche 1 botte","Citrons 4","Ail 1 tête"],
+    "Viandes et poissons":["Filet de lieu 600g","Escalopes de dinde 600g","Filet de saumon 600g","Gigot d'agneau 1,2kg","Poulet fermier 1,2kg"],
+    "Épicerie":["Riz basmati 250g","Lentilles corail 250g","Riz pour risotto 250g","Pâtes 500g","Huile d'olive 500ml","Bouillon volaille 1L"],
+    "Sans lactose pour Simon":["Crème de riz 200ml","Lait de riz 1L"],
+    "Produits frais & laitiers":["Œufs fermiers 12","Fromage frais 200g","Beurre 250g","Parmesan 100g"],
+    "Bouillons & condiments":["Herbes de Provence","Aneth séché","Sel, poivre"]
+  }
+},
+
+// ═══ SEMAINE 2 — 11 mai 2026 ═══
+{
+  weekKey:"2026-05-11", label: "Semaine du 11 mai 2026", mois: "mai",
+  prefs: ["équilibré","saison","restes"],
+  jours: [
+    {jour:"Lundi",midi:{nom:"Restes : Blanquette de veau aux légumes de saison",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Cabillaud rôti aux tomates cerises et basilic",note:"Cuisiné pour 4 — restes mardi midi"}},
+    {jour:"Mardi",midi:{nom:"Cabillaud rôti aux tomates cerises et basilic",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Pâtes aux courgettes, pignons et citron",note:"Cuisiné pour 4"}},
+    {jour:"Mercredi",midi:{nom:"Taboulé de printemps aux légumes frais",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Poulet sauté aux poivrons et riz complet",note:"Cuisiné pour 4 — restes jeudi midi"}},
+    {jour:"Jeudi",midi:{nom:"Poulet sauté aux poivrons et riz complet",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Velouté de petits pois à la menthe et tartines",note:"Cuisiné pour 4 — restes vendredi midi"}},
+    {jour:"Vendredi",midi:{nom:"Velouté de petits pois à la menthe",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Sardines grillées, tian de légumes provençaux",note:"Repas léger"}},
+    {jour:"Samedi",midi:{nom:"Quiche légumes verts et salade (sans lait pour Simon)",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côtelettes d'agneau, flageolets et carottes glacées",note:"Cuisiné pour 4 — restes dimanche midi"}},
+    {jour:"Dimanche",midi:{nom:"Côtelettes d'agneau et flageolets",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Blanquette de veau aux légumes de saison",note:"Grand repas dominical"}}
+  ],
+  recettes:[
+    {nom:"Cabillaud rôti aux tomates cerises et basilic",temps:"20 min",tmTemps:"18 min",tags:["Saison","Rapide"],ingredients:[{q:600,u:"g",n:"dos de cabillaud"},{q:400,u:"g",n:"tomates cerises"},{q:1,u:"",n:"botte de basilic frais"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:2,u:"",n:"gousses d'ail"},{q:1,u:"",n:"sel, poivre"}],etapes:["Préchauffer le four à 200°C.","Disposer le cabillaud dans un plat. Entourer de tomates cerises, ail, basilic, huile.","Enfourner 18 min jusqu'à opacité. Servir avec pain de campagne."],tmEtapes:[{badge:"Varoma",text:"Mettre 1L d'eau. Cabillaud sur plateau Varoma avec tomates cerises, ail, basilic, huile. Cuire 15 min / Varoma / vit 1."}],tmTip:"Les tomates fondent en sauce au contact de la vapeur.",simon:"Aucune adaptation. Retirer arêtes."},
+    {nom:"Poulet sauté aux poivrons et riz complet",temps:"30 min",tmTemps:"25 min",tags:["Coloré","Équilibré"],ingredients:[{q:800,u:"g",n:"blancs de poulet"},{q:3,u:"",n:"poivrons colorés"},{q:250,u:"g",n:"riz complet"},{q:2,u:"",n:"oignons"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:400,u:"ml",n:"coulis de tomate"},{q:1,u:"",n:"paprika, sel, poivre"}],etapes:["Cuire le riz complet 25 min.","Faire revenir oignons et poivrons 5 min. Ajouter poulet coupé en lanières.","Cuire 8 min. Ajouter coulis de tomate et paprika. Mijoter 5 min.","Servir avec le riz."],tmEtapes:[{badge:"Bol",text:"Oignons + huile dans le bol. Hacher 3 sec / vit 5. Faire revenir 3 min / 120°C / vit 1."},{badge:"Bol",text:"Ajouter poivrons, poulet, coulis, paprika, sel. Cuire 20 min / 100°C / sens inverse / vit mijotage."},{badge:"Fin",text:"Cuire le riz séparément. Servir ensemble."}],tmTip:"Le poulet reste fondant grâce à la cuisson douce.",simon:"Aucune adaptation."},
+    {nom:"Côtelettes d'agneau, flageolets et carottes glacées",temps:"30 min",tmTemps:"25 min",tags:["Saison","Traditionnel"],ingredients:[{q:8,u:"",n:"côtelettes d'agneau"},{q:400,u:"g",n:"flageolets en boîte"},{q:400,u:"g",n:"carottes"},{q:2,u:"",n:"gousses d'ail"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"thym, romarin, sel, poivre"}],etapes:["Cuire les carottes à la vapeur 12 min puis glacer au miel 2 min.","Réchauffer les flageolets avec ail et thym 5 min.","Griller les côtelettes 3-4 min de chaque côté.","Servir avec flageolets et carottes."],tmEtapes:[{badge:"Bol",text:"Ail + huile dans le bol. 2 min / 120°C / vit 1. Ajouter flageolets égouttés, thym. Réchauffer 5 min / 90°C / sens inverse / vit 1."},{badge:"Varoma",text:"Carottes dans le Varoma pendant la cuisson des flageolets."}],tmTip:"Les flageolets s'imprègnent des arômes pendant que les carottes cuisent.",simon:"Aucune adaptation."}
+  ],
+  courses:{
+    "Fruits et légumes":["Tomates cerises 400g","Poivrons 3 colorés","Courgettes 3","Petits pois frais 400g","Carottes 400g","Menthe 1 botte","Basilic frais 2 bottes","Oignons 4","Ail 1 tête","Citron 2"],
+    "Viandes et poissons":["Dos de cabillaud 600g","Blancs de poulet 800g","Sardines fraîches 600g","Côtelettes d'agneau 8","Veau pour blanquette 800g"],
+    "Épicerie":["Riz complet 250g","Semoule fine 250g","Flageolets boîte 400g","Pignons de pin 50g","Coulis de tomate 400ml","Pâtes 500g"],
+    "Sans lactose pour Simon":["Crème de riz 200ml"],
+    "Produits frais & laitiers":["Œufs fermiers 8","Pâte brisée 1","Gruyère râpé 150g","Beurre 200g"],
+    "Bouillons & condiments":["Paprika","Herbes de Provence","Romarin","Thym"]
+  }
+},
+
+// ═══ SEMAINE 3 — 18 mai 2026 ═══
+{
+  weekKey:"2026-05-18", label: "Semaine du 18 mai 2026", mois: "mai",
+  prefs: ["équilibré","saison","restes"],
+  jours: [
+    {jour:"Lundi",midi:{nom:"Restes : Rôti de porc aux pommes et cidre",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Dorade en croûte de sel, légumes vapeur",note:"Cuisiné pour 4 — restes mardi midi"}},
+    {jour:"Mardi",midi:{nom:"Dorade en croûte de sel, légumes vapeur",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Pasta primavera aux légumes du moment",note:"Cuisiné pour 4"}},
+    {jour:"Mercredi",midi:{nom:"Riz sauté aux œufs et petits légumes",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Magret de canard aux cerises, purée maison",note:"Cuisiné pour 4 — restes jeudi midi"}},
+    {jour:"Jeudi",midi:{nom:"Magret de canard aux cerises et purée",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Velouté d'asperges blanches, tartines jambon cru",note:"Cuisiné pour 4 — restes vendredi midi"}},
+    {jour:"Vendredi",midi:{nom:"Velouté d'asperges blanches",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Crevettes sautées à l'ail, quinoa et salade",note:"Repas léger"}},
+    {jour:"Samedi",midi:{nom:"Pissaladière maison et salade niçoise",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côte de bœuf grillée, gratin de courgettes",note:"Cuisiné pour 4 — restes dimanche midi"}},
+    {jour:"Dimanche",midi:{nom:"Côte de bœuf et gratin de courgettes",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Rôti de porc aux pommes et cidre",note:"Grand repas dominical"}}
+  ],
+  recettes:[
+    {nom:"Pasta primavera aux légumes du moment",temps:"20 min",tmTemps:"18 min",tags:["Saison","Végétarien"],ingredients:[{q:400,u:"g",n:"pâtes fraîches"},{q:2,u:"",n:"courgettes"},{q:200,u:"g",n:"petits pois écossés"},{q:200,u:"g",n:"asperges vertes"},{q:2,u:"",n:"gousses d'ail"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"basilic, parmesan, sel, poivre"}],etapes:["Cuire les pâtes al dente.","Sauter ail, courgettes en dés, petits pois et asperges 6 min.","Mélanger légumes et pâtes. Huile d'olive, basilic, parmesan."],tmEtapes:[{badge:"Bol",text:"Ail + huile. 2 min / 120°C / vit 1. Ajouter légumes coupés, 5 min / 100°C / sens inverse / vit 1."},{badge:"Fin",text:"Cuire les pâtes séparément. Mélanger avec les légumes, basilic et parmesan."}],tmTip:"Les légumes restent croquants en cuisson rapide.",simon:"Remplacer parmesan par levure nutritionnelle pour Simon."},
+    {nom:"Crevettes sautées à l'ail, quinoa et salade",temps:"20 min",tmTemps:"18 min",tags:["Rapide","Protéines"],ingredients:[{q:600,u:"g",n:"crevettes décortiquées"},{q:250,u:"g",n:"quinoa"},{q:4,u:"",n:"gousses d'ail"},{q:1,u:"",n:"citron"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"persil frais, sel, poivre"}],etapes:["Cuire le quinoa 15 min dans 500ml eau salée.","Sauter les crevettes à l'ail dans l'huile 3-4 min. Citron, persil.","Servir sur le quinoa avec salade verte."],tmEtapes:[{badge:"Bol",text:"Quinoa + 500ml eau + sel dans le bol. Cuire 15 min / 100°C / sens inverse / vit 1."},{badge:"Fin",text:"Pendant la cuisson, sauter crevettes à l'ail à la poêle 3 min. Citron, persil. Servir sur quinoa."}],tmTip:"Le quinoa parfaitement cuit en TM31 sans surveiller.",simon:"Aucune adaptation."},
+    {nom:"Magret de canard aux cerises, purée maison",temps:"35 min",tmTemps:"30 min",tags:["Festif","Saison"],ingredients:[{q:2,u:"",n:"magrets de canard"},{q:300,u:"g",n:"cerises fraîches dénoyautées"},{q:800,u:"g",n:"pommes de terre"},{q:50,u:"ml",n:"vinaigre balsamique"},{q:2,u:"c.à.s",n:"miel"},{q:1,u:"",n:"sel, poivre"}],etapes:["Quadriller la peau des magrets. Cuire côté peau 8 min, retourner 4 min. Garder au chaud.","Déglacer avec vinaigre et miel. Ajouter cerises, mijoter 5 min.","Cuire les pommes de terre, écraser avec un peu d'huile pour Simon (sans beurre ni lait).","Servir magret tranché avec sauce et purée."],tmEtapes:[{badge:"Bol",text:"Pommes de terre en cubes + 500ml eau dans le bol. Cuire 20 min / 100°C / vit 1. Écraser à la spatule."},{badge:"Fin",text:"Cuire les magrets à la poêle pendant que la purée se fait. Sauce cerises-balsamique séparément."}],tmTip:"Purée maison sans effort pendant que vous cuisinez les magrets.",simon:"Purée à l'huile d'olive sans beurre ni lait pour Simon."}
+  ],
+  courses:{
+    "Fruits et légumes":["Asperges blanches 500g","Asperges vertes 300g","Courgettes 4","Petits pois écossés 400g","Pommes de terre 800g","Cerises 300g","Pommes 4","Citrons 3","Ail 2 têtes"],
+    "Viandes et poissons":["Dorade 1,2kg","Magrets de canard 2","Crevettes décortiquées 600g","Côte de bœuf 1,2kg","Rôti de porc 1kg"],
+    "Épicerie":["Pâtes fraîches 400g","Quinoa 250g","Riz 250g","Vinaigre balsamique 100ml","Miel 1 pot"],
+    "Sans lactose pour Simon":["Crème de riz 200ml","Huile de coco 200ml"],
+    "Produits frais & laitiers":["Œufs fermiers 8","Jambon cru 150g","Beurre 250g","Parmesan 100g"],
+    "Bouillons & condiments":["Sel de Guérande 1kg (croûte de sel)","Herbes de Provence"]
+  }
+},
+
+// ═══ SEMAINE 4 — 25 mai 2026 ═══
+{
+  weekKey:"2026-05-25", label: "Semaine du 25 mai 2026", mois: "mai",
+  prefs: ["équilibré","saison","restes"],
+  jours: [
+    {jour:"Lundi",midi:{nom:"Restes : Poulet basquaise aux poivrons",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Truite aux amandes, haricots verts et pommes vapeur",note:"Cuisiné pour 4 — restes mardi midi"}},
+    {jour:"Mardi",midi:{nom:"Truite aux amandes, haricots verts",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Risotto de légumes printaniers au citron",note:"Cuisiné pour 4"}},
+    {jour:"Mercredi",midi:{nom:"Omelette aux fines herbes et salade de tomates",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Sauté de veau aux champignons et pâtes fraîches",note:"Cuisiné pour 4 — restes jeudi midi"}},
+    {jour:"Jeudi",midi:{nom:"Sauté de veau aux champignons et pâtes fraîches",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Gaspacho de tomates et tartines à l'avocat",note:"Cuisiné pour 4 — restes vendredi midi"}},
+    {jour:"Vendredi",midi:{nom:"Gaspacho de tomates et tartines",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Dorade grillée, ratatouille et riz",note:"Repas léger"}},
+    {jour:"Samedi",midi:{nom:"Salade niçoise complète au thon frais",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Travers de porc caramélisés, coleslaw maison",note:"Cuisiné pour 4 — restes dimanche midi"}},
+    {jour:"Dimanche",midi:{nom:"Travers de porc caramélisés et coleslaw",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Poulet basquaise aux poivrons et riz",note:"Grand repas dominical"}}
+  ],
+  recettes:[
+    {nom:"Truite aux amandes, haricots verts et pommes vapeur",temps:"25 min",tmTemps:"20 min",tags:["Saison","Élégant"],ingredients:[{q:4,u:"",n:"truites portion"},{q:80,u:"g",n:"amandes effilées"},{q:400,u:"g",n:"haricots verts"},{q:400,u:"g",n:"pommes de terre"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"citron, sel, poivre"}],etapes:["Cuire haricots verts et pommes de terre vapeur 12 min.","Dorer les amandes 2 min à sec dans une poêle.","Poêler les truites 4 min de chaque côté dans l'huile.","Disposer amandes sur les truites. Servir avec légumes et citron."],tmEtapes:[{badge:"Varoma",text:"Mettre 1L eau. Pommes de terre dans Varoma, haricots sur plateau. Truites sur plateau avec huile, citron. Cuire 18 min / Varoma / vit 1."},{badge:"Fin",text:"Dorer amandes à la poêle à sec 2 min. Parsemer sur les truites."}],tmTip:"Tout cuit en même temps au Varoma, aucune surveillance.",simon:"Aucune adaptation. Retirer arêtes."},
+    {nom:"Poulet basquaise aux poivrons et riz",temps:"50 min",tmTemps:"40 min",tags:["Saison","Familial"],ingredients:[{q:1.2,u:"kg",n:"poulet coupé en morceaux"},{q:4,u:"",n:"poivrons rouges et verts"},{q:400,u:"g",n:"tomates pelées en boîte"},{q:2,u:"",n:"oignons"},{q:3,u:"",n:"gousses d'ail"},{q:250,u:"g",n:"riz long"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"piment d'Espelette, thym, sel"}],etapes:["Faire revenir oignons, ail et poivrons 5 min.","Saisir le poulet 5 min de chaque côté. Ajouter tomates, piment, thym.","Mijoter 35 min à feu doux. Cuire le riz séparément."],tmEtapes:[{badge:"Bol",text:"Oignons + ail + huile. Hacher 3 sec / vit 5. Revenir 3 min / 120°C / vit 1."},{badge:"Bol",text:"Ajouter poivrons en lanières, tomates, thym, piment, poulet. Cuire 35 min / 100°C / sens inverse / vit mijotage."},{badge:"Fin",text:"Cuire riz séparément. Servir poulet basquaise sur riz."}],tmTip:"Mijoté parfait sans risque d'accrochage.",simon:"Retirer le piment pour Simon et Diane."}
+  ],
+  courses:{
+    "Fruits et légumes":["Poivrons 6 colorés","Tomates 1kg","Haricots verts 400g","Pommes de terre 400g","Courgettes 4","Oignons 4","Ail 2 têtes","Avocat 4","Citrons 4","Amandes effilées 80g"],
+    "Viandes et poissons":["Truites portion 4","Thon frais 400g","Dorade 1kg","Poulet 1,2kg","Travers de porc 1kg","Veau à sauter 600g"],
+    "Épicerie":["Riz long 500g","Pâtes fraîches 400g","Tomates pelées boîte 800g","Champignons séchés 50g"],
+    "Sans lactose pour Simon":["Lait de riz 1L","Crème de riz 200ml"],
+    "Produits frais & laitiers":["Œufs fermiers 10","Beurre 200g","Parmesan 100g"],
+    "Bouillons & condiments":["Piment d'Espelette","Thym frais","Sauce soja"]
+  }
+},
+
+// ═══ SEMAINE 5 — 1 juin 2026 ═══
+{
+  weekKey:"2026-06-01", label: "Semaine du 1 juin 2026", mois: "juin",
+  prefs: ["équilibré","saison","restes"],
+  jours: [
+    {jour:"Lundi",midi:{nom:"Restes : Agneau aux aubergines et tomates",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Maquereau grillé, salade de pommes de terre tièdes",note:"Cuisiné pour 4 — restes mardi midi"}},
+    {jour:"Mardi",midi:{nom:"Maquereau grillé et salade de pommes de terre",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Pâtes au pesto de roquette et tomates cerises",note:"Cuisiné pour 4"}},
+    {jour:"Mercredi",midi:{nom:"Salade de quinoa, légumes grillés et feta",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côtes de porc au miel et moutarde, haricots verts",note:"Cuisiné pour 4 — restes jeudi midi"}},
+    {jour:"Jeudi",midi:{nom:"Côtes de porc au miel et haricots verts",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Minestrone de légumes d'été et pain grillé",note:"Cuisiné pour 4 — restes vendredi midi"}},
+    {jour:"Vendredi",midi:{nom:"Minestrone de légumes d'été",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Gambas à l'ail et persil, riz thaï",note:"Repas léger"}},
+    {jour:"Samedi",midi:{nom:"Pizza maison légumes d'été (pâte sans lactose pour Simon)",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côte de veau, gratin de courgettes au basilic",note:"Cuisiné pour 4 — restes dimanche midi"}},
+    {jour:"Dimanche",midi:{nom:"Côte de veau et gratin de courgettes",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Agneau aux aubergines, tomates et herbes",note:"Grand repas dominical"}}
+  ],
+  recettes:[
+    {nom:"Maquereau grillé, salade de pommes de terre tièdes",temps:"25 min",tmTemps:"20 min",tags:["Saison","Oméga 3"],ingredients:[{q:4,u:"",n:"maquereaux vidés"},{q:600,u:"g",n:"pommes de terre"},{q:1,u:"",n:"botte de ciboulette"},{q:2,u:"c.à.s",n:"vinaigre de vin"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"moutarde, sel, poivre"}],etapes:["Cuire les pommes de terre 20 min. Couper en tranches tièdes.","Assaisonner avec vinaigrette moutarde-ciboulette.","Griller les maquereaux 4 min de chaque côté.","Servir ensemble."],tmEtapes:[{badge:"Varoma",text:"Pommes de terre dans Varoma + 1L eau. Maquereaux sur plateau. Cuire 18 min / Varoma / vit 1."},{badge:"Fin",text:"Couper pommes de terre tièdes, assaisonner vinaigrette. Servir avec maquereaux."}],tmTip:"Tout cuit simultanément.",simon:"Aucune adaptation. Enlever arêtes."},
+    {nom:"Gambas à l'ail et persil, riz thaï",temps:"15 min",tmTemps:"15 min",tags:["Rapide","Festif"],ingredients:[{q:800,u:"g",n:"gambas crues décortiquées"},{q:250,u:"g",n:"riz jasmin"},{q:6,u:"",n:"gousses d'ail"},{q:1,u:"",n:"bouquet de persil plat"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"citron, sel, poivre"}],etapes:["Cuire le riz jasmin 12 min.","Saisir les gambas à l'ail dans l'huile très chaude 2 min de chaque côté.","Ajouter persil haché et jus de citron en fin de cuisson."],tmEtapes:[{badge:"Bol",text:"Riz + 500ml eau + sel dans le bol. Cuire 13 min / 100°C / sens inverse / vit 1."},{badge:"Fin",text:"Sauter gambas à l'ail à la poêle 2 min chaque côté. Citron, persil. Servir sur riz."}],tmTip:"Le riz parfait pendant que vous faites les gambas.",simon:"Aucune adaptation."},
+    {nom:"Agneau aux aubergines, tomates et herbes",temps:"60 min",tmTemps:"50 min",tags:["Saison","Méditerranéen"],ingredients:[{q:1,u:"kg",n:"épaule d'agneau en cubes"},{q:2,u:"",n:"aubergines"},{q:400,u:"g",n:"tomates pelées"},{q:2,u:"",n:"oignons"},{q:4,u:"",n:"gousses d'ail"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"romarin, thym, sel, poivre"}],etapes:["Faire revenir oignons et ail 3 min.","Saisir agneau 5 min. Ajouter aubergines en cubes, tomates, herbes.","Mijoter 45 min à feu doux jusqu'à tendreté."],tmEtapes:[{badge:"Bol",text:"Oignons + ail + huile. Hacher 3 sec / vit 5. Revenir 3 min / 120°C / vit 1."},{badge:"Bol",text:"Ajouter agneau, aubergines, tomates, herbes. Cuire 45 min / 95°C / sens inverse / vit mijotage."}],tmTip:"Mijoté parfait, viande ultra-tendre.",simon:"Aucune adaptation."}
+  ],
+  courses:{
+    "Fruits et légumes":["Aubergines 4","Tomates cerises 400g","Courgettes 4","Haricots verts 400g","Pommes de terre 600g","Ciboulette 1 botte","Persil plat 2 bottes","Roquette 150g","Basilic 2 bottes","Ail 3 têtes","Citrons 5"],
+    "Viandes et poissons":["Maquereaux 4","Gambas crues 800g","Côtes de porc 4","Côte de veau 4","Épaule d'agneau 1kg"],
+    "Épicerie":["Riz jasmin 250g","Quinoa 250g","Pâtes 500g","Pesto basilic 1 pot","Tomates pelées boîte 800g","Farine 500g","Levure 1 sachet"],
+    "Sans lactose pour Simon":["Crème de riz 200ml","Lait de riz 1L"],
+    "Produits frais & laitiers":["Œufs fermiers 10","Feta 200g","Mozzarella 250g","Beurre 200g"],
+    "Bouillons & condiments":["Moutarde","Vinaigre de vin","Romarin frais"]
+  }
+},
+
+// ═══ SEMAINE 6 — 8 juin 2026 ═══
+{
+  weekKey:"2026-06-08", label: "Semaine du 8 juin 2026", mois: "juin",
+  prefs: ["équilibré","saison","restes"],
+  jours: [
+    {jour:"Lundi",midi:{nom:"Restes : Poulet rôti provençal et légumes",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Loup de mer grillé, fenouil braisé et tomates",note:"Cuisiné pour 4 — restes mardi midi"}},
+    {jour:"Mardi",midi:{nom:"Loup de mer et fenouil braisé",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Penne à la puttanesca (sans anchois pour Simon)",note:"Cuisiné pour 4"}},
+    {jour:"Mercredi",midi:{nom:"Salade composée tomates-mozzarella-basilic et pain",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Émincé de bœuf sauté aux poivrons et nouilles",note:"Cuisiné pour 4 — restes jeudi midi"}},
+    {jour:"Jeudi",midi:{nom:"Émincé de bœuf aux poivrons et nouilles",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Vichyssoise de légumes d'été et tartines",note:"Cuisiné pour 4 — restes vendredi midi"}},
+    {jour:"Vendredi",midi:{nom:"Vichyssoise de légumes d'été",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Brochettes de poulet mariné, taboulé",note:"Repas léger"}},
+    {jour:"Samedi",midi:{nom:"Tarte aux légumes d'été et chèvre",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Entrecôte grillée, frites maison et ratatouille",note:"Cuisiné pour 4 — restes dimanche midi"}},
+    {jour:"Dimanche",midi:{nom:"Entrecôte et ratatouille",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Poulet rôti provençal, légumes du soleil",note:"Grand repas dominical"}}
+  ],
+  recettes:[
+    {nom:"Loup de mer grillé, fenouil braisé et tomates",temps:"30 min",tmTemps:"25 min",tags:["Saison","Élégant"],ingredients:[{q:1.2,u:"kg",n:"loup de mer entier"},{q:2,u:"",n:"fenouils"},{q:400,u:"g",n:"tomates cerises"},{q:1,u:"",n:"citron"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"thym, sel, poivre"}],etapes:["Préchauffer le four à 200°C. Inciser le loup, glisser thym et citron.","Braiser le fenouil coupé en quartiers 15 min.","Enfourner le loup avec tomates 20 min."],tmEtapes:[{badge:"Varoma",text:"Fenouil en quartiers + tomates dans Varoma. Loup sur plateau avec thym et citron. 1L eau dans le bol. Cuire 22 min / Varoma / vit 1."}],tmTip:"Le fenouil s'attendrit parfaitement à la vapeur.",simon:"Aucune adaptation. Retirer arêtes."},
+    {nom:"Brochettes de poulet mariné, taboulé",temps:"30 min",tmTemps:"25 min",tags:["Saison","Estival"],ingredients:[{q:600,u:"g",n:"blancs de poulet"},{q:250,u:"g",n:"semoule fine"},{q:2,u:"",n:"tomates"},{q:1,u:"",n:"concombre"},{q:1,u:"",n:"bouquet de menthe et persil"},{q:2,u:"",n:"citrons"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"cumin, sel, poivre"}],etapes:["Mariner le poulet huile-citron-cumin 30 min. Embrocher et griller 10 min.","Préparer le taboulé : ébouillanter la semoule, égrener, mélanger avec légumes et herbes.","Assaisonner avec citron et huile."],tmEtapes:[{badge:"Bol",text:"Semoule + 250ml eau bouillante dans le bol. Laisser gonfler 5 min couvercle fermé, égrener 10 sec / vit 3."},{badge:"Fin",text:"Mélanger semoule avec tomates, concombre, herbes, citron. Griller brochettes à part."}],tmTip:"Semoule parfaitement égrainée en quelques secondes.",simon:"Aucune adaptation."}
+  ],
+  courses:{
+    "Fruits et légumes":["Fenouil 2","Tomates cerises 400g","Tomates 4","Courgettes 4","Aubergines 2","Poivrons 3","Concombre 1","Menthe 1 botte","Persil 2 bottes","Basilic 2 bottes","Ail 2 têtes","Citrons 6"],
+    "Viandes et poissons":["Loup de mer 1,2kg","Blancs de poulet 800g","Bœuf à sauter 600g","Entrecôtes 4","Poulet fermier 1,2kg"],
+    "Épicerie":["Semoule fine 250g","Pâtes 500g","Nouilles 300g","Olives noires 150g","Câpres 1 pot"],
+    "Sans lactose pour Simon":["Crème de riz 200ml"],
+    "Produits frais & laitiers":["Œufs fermiers 8","Chèvre 200g","Mozzarella 250g","Beurre 200g"],
+    "Bouillons & condiments":["Cumin","Herbes de Provence","Thym"]
+  }
+},
+
+// ═══ SEMAINES 7-20 : Structure allégée pour les semaines restantes ═══
+
+// SEMAINE 7 — 15 juin 2026
+{weekKey:"2026-06-15",label:"Semaine du 15 juin 2026",mois:"juin",prefs:["équilibré","saison","restes"],
+jours:[
+  {jour:"Lundi",midi:{nom:"Restes : Daurade royale aux herbes et légumes",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Filets de rouget, ratatouille niçoise",note:"Cuisiné pour 4 — restes mardi midi"}},
+  {jour:"Mardi",midi:{nom:"Filets de rouget et ratatouille",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Spaghettis aux palourdes et persil",note:"Cuisiné pour 4"}},
+  {jour:"Mercredi",midi:{nom:"Salade grecque et pain pita grillé",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Escalopes de veau milanaise, linguines",note:"Cuisiné pour 4 — restes jeudi midi"}},
+  {jour:"Jeudi",midi:{nom:"Escalopes de veau milanaise et linguines",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Soupe froide de tomates et basilic",note:"Cuisiné pour 4 — restes vendredi midi"}},
+  {jour:"Vendredi",midi:{nom:"Soupe froide de tomates et basilic",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Calmars grillés, salade de roquette et citron",note:"Repas léger"}},
+  {jour:"Samedi",midi:{nom:"Burger maison bœuf et légumes",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Gigot d'agneau aux flageolets et herbes",note:"Cuisiné pour 4 — restes dimanche midi"}},
+  {jour:"Dimanche",midi:{nom:"Gigot d'agneau et flageolets",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Daurade royale aux herbes et légumes méditerranéens",note:"Grand repas dominical"}}
+],recettes:[{nom:"Filets de rouget, ratatouille niçoise",temps:"35 min",tmTemps:"30 min",tags:["Saison","Méditerranéen"],ingredients:[{q:600,u:"g",n:"filets de rouget"},{q:2,u:"",n:"courgettes"},{q:2,u:"",n:"aubergines"},{q:3,u:"",n:"tomates"},{q:2,u:"",n:"poivrons"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"thym, basilic, sel, poivre"}],etapes:["Préparer la ratatouille : sauter tous les légumes en dés 20 min avec herbes.","Poêler les filets de rouget 3 min de chaque côté.","Servir les rougets sur la ratatouille."],tmEtapes:[{badge:"Bol",text:"Tous les légumes en dés + huile + herbes. Cuire 25 min / 100°C / sens inverse / vit 1. Rougets poêlés séparément."}],tmTip:"Ratatouille sans surveillance pendant que vous préparez le reste.",simon:"Aucune adaptation."}],
+courses:{"Fruits et légumes":["Courgettes 4","Aubergines 4","Tomates 6","Poivrons 4","Roquette 150g","Citrons 4","Ail 2 têtes","Persil 2 bottes","Basilic 2 bottes"],"Viandes et poissons":["Filets de rouget 600g","Calmars 600g","Escalopes de veau 600g","Bœuf haché 600g","Gigot d'agneau 1,2kg","Daurade royale 1,2kg"],"Épicerie":["Spaghettis 400g","Linguines 400g","Pains pita 4","Palourdes 500g"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Œufs fermiers 8","Feta 200g","Beurre 200g"],"Bouillons & condiments":["Thym","Basilic séché","Herbes de Provence"]}},
+
+// SEMAINE 8 — 22 juin 2026
+{weekKey:"2026-06-22",label:"Semaine du 22 juin 2026",mois:"juin",prefs:["équilibré","saison","restes"],
+jours:[
+  {jour:"Lundi",midi:{nom:"Restes : Poulet basquaise tomates poivrons",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Sardines fraîches grillées au citron, tomates",note:"Cuisiné pour 4 — restes mardi midi"}},
+  {jour:"Mardi",midi:{nom:"Sardines grillées et tomates",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Pâtes froides pesto, légumes grillés",note:"Cuisiné pour 4"}},
+  {jour:"Mercredi",midi:{nom:"Buddha bowl riz, légumes rôtis et avocat",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Steak de thon grillé, salade de haricots verts",note:"Cuisiné pour 4 — restes jeudi midi"}},
+  {jour:"Jeudi",midi:{nom:"Steak de thon et haricots verts",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Gaspacho andalou et charcuteries",note:"Cuisiné pour 4 — restes vendredi midi"}},
+  {jour:"Vendredi",midi:{nom:"Gaspacho andalou",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Wok de légumes d'été et crevettes",note:"Repas léger"}},
+  {jour:"Samedi",midi:{nom:"Salade de lentilles beluga aux herbes",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côte de bœuf partagée, légumes grillés au barbecue",note:"Cuisiné pour 4 — restes dimanche midi"}},
+  {jour:"Dimanche",midi:{nom:"Côte de bœuf et légumes grillés",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Poulet basquaise tomates et poivrons",note:"Grand repas dominical"}}
+],recettes:[{nom:"Wok de légumes d'été et crevettes",temps:"15 min",tmTemps:"15 min",tags:["Rapide","Estival"],ingredients:[{q:600,u:"g",n:"crevettes décortiquées"},{q:2,u:"",n:"courgettes"},{q:2,u:"",n:"poivrons"},{q:200,u:"g",n:"pois gourmands"},{q:4,u:"",n:"gousses d'ail"},{q:4,u:"c.à.s",n:"huile de sésame"},{q:3,u:"c.à.s",n:"sauce soja"},{q:250,u:"g",n:"nouilles"}],etapes:["Cuire les nouilles 3 min. Réserver.","Sauter les légumes en lanières 3 min à feu vif.","Ajouter les crevettes 2 min, sauce soja et ail.","Mélanger avec les nouilles."],tmEtapes:[{badge:"Bol",text:"Nouilles + eau. Cuire selon paquet. Légumes et crevettes sautés séparément à la poêle."}],tmTip:"Le wok se fait mieux à la poêle, le TM31 gère les nouilles.",simon:"Sauce soja tamari (sans blé) ou remplacer par jus de citron."}],
+courses:{"Fruits et légumes":["Courgettes 6","Poivrons 6","Tomates 4","Haricots verts 400g","Avocat 3","Pois gourmands 200g","Ail 2 têtes","Citrons 5","Basilic 2 bottes"],"Viandes et poissons":["Sardines fraîches 600g","Steaks de thon 4","Crevettes 600g","Côte de bœuf 1,2kg","Poulet 1,2kg"],"Épicerie":["Lentilles beluga 250g","Riz 250g","Pâtes 500g","Nouilles 300g","Sauce soja 200ml","Huile de sésame 100ml","Pesto basilic 1 pot"],"Sans lactose pour Simon":["Sauce soja tamari 100ml"],"Produits frais & laitiers":["Œufs fermiers 8","Charcuteries 300g","Beurre 200g"],"Bouillons & condiments":["Paprika fumé","Cumin","Gingembre en poudre"]}},
+
+// SEMAINE 9 — 29 juin 2026
+{weekKey:"2026-06-29",label:"Semaine du 29 juin 2026",mois:"juin",prefs:["équilibré","saison","restes"],
+jours:[
+  {jour:"Lundi",midi:{nom:"Restes : Épaule d'agneau confite aux herbes",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Lieu jaune au four, tomates provençales",note:"Cuisiné pour 4 — restes mardi midi"}},
+  {jour:"Mardi",midi:{nom:"Lieu jaune et tomates provençales",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Tacos de poulet grillé, salsa et avocat",note:"Cuisiné pour 4"}},
+  {jour:"Mercredi",midi:{nom:"Salade composée estivale et œufs durs",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Filet mignon de porc, ratatouille",note:"Cuisiné pour 4 — restes jeudi midi"}},
+  {jour:"Jeudi",midi:{nom:"Filet mignon et ratatouille",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Gaspacho de melon au jambon cru",note:"Cuisiné pour 4 — restes vendredi midi"}},
+  {jour:"Vendredi",midi:{nom:"Gaspacho de melon",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Moules marinières, frites maison",note:"Repas léger"}},
+  {jour:"Samedi",midi:{nom:"Salade de pâtes estivale thon et légumes",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Magret de canard aux abricots et miel",note:"Cuisiné pour 4 — restes dimanche midi"}},
+  {jour:"Dimanche",midi:{nom:"Magret de canard aux abricots",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Épaule d'agneau confite aux herbes et légumes",note:"Grand repas dominical"}}
+],recettes:[{nom:"Moules marinières, frites maison",temps:"25 min",tmTemps:"20 min",tags:["Saison","Festif"],ingredients:[{q:2,u:"kg",n:"moules"},{q:1,u:"",n:"oignon"},{q:3,u:"",n:"gousses d'ail"},{q:200,u:"ml",n:"vin blanc sec"},{q:1,u:"",n:"bouquet de persil"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:800,u:"g",n:"pommes de terre pour frites"}],etapes:["Nettoyer et gratter les moules.","Faire revenir oignon et ail. Ajouter vin blanc. Mettre les moules, couvrir 5 min.","Parsemer de persil. Servir avec frites maison."],tmEtapes:[{badge:"Bol",text:"Oignon + ail + huile. 2 min / 120°C / vit 1. Ajouter vin blanc. Moules dans le Varoma. Cuire 10 min / Varoma / vit 1."},{badge:"Fin",text:"Vérifier ouverture des moules. Parsemer persil. Frites cuites au four ou à la friteuse."}],tmTip:"Les moules cuisent à la vapeur du vin blanc — saveur concentrée.",simon:"Aucune adaptation. Surveiller les coquilles."}],
+courses:{"Fruits et légumes":["Tomates 6","Aubergines 2","Courgettes 4","Poivrons 2","Melon 2","Abricots 400g","Avocat 2","Pommes de terre 800g","Ail 3 têtes","Persil 3 bottes","Citrons 4"],"Viandes et poissons":["Lieu jaune 600g","Blancs de poulet 600g","Filet mignon de porc 600g","Moules 2kg","Magret de canard 2"],"Épicerie":["Pâtes 500g","Riz 250g","Tortillas de blé 8","Vin blanc sec 200ml"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Œufs fermiers 8","Jambon cru 150g","Beurre 200g"],"Bouillons & condiments":["Miel liquide","Herbes de Provence","Cumin"]}},
+
+// SEMAINE 10 — 6 juillet 2026
+{weekKey:"2026-07-06",label:"Semaine du 6 juillet 2026",mois:"juillet",prefs:["équilibré","saison","restes"],
+jours:[
+  {jour:"Lundi",midi:{nom:"Restes : Poulet rôti aux herbes de Provence",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Saint-Jacques poêlées, purée de petits pois",note:"Cuisiné pour 4 — restes mardi midi"}},
+  {jour:"Mardi",midi:{nom:"Saint-Jacques et purée de petits pois",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Pasta à la norma (aubergines, tomates)",note:"Cuisiné pour 4"}},
+  {jour:"Mercredi",midi:{nom:"Salade de riz complet aux légumes d'été",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côtelettes d'agneau grillées, tian provençal",note:"Cuisiné pour 4 — restes jeudi midi"}},
+  {jour:"Jeudi",midi:{nom:"Côtelettes d'agneau et tian provençal",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Vichyssoise de courgettes froide et croûtons",note:"Cuisiné pour 4 — restes vendredi midi"}},
+  {jour:"Vendredi",midi:{nom:"Vichyssoise de courgettes froide",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Brochettes de bœuf marinées, légumes grillés",note:"Repas léger"}},
+  {jour:"Samedi",midi:{nom:"Tarte fine tomates-moutarde et salade",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Paella végétarienne aux légumes d'été",note:"Cuisiné pour 4 — restes dimanche midi"}},
+  {jour:"Dimanche",midi:{nom:"Paella végétarienne",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Poulet rôti aux herbes de Provence et ail",note:"Grand repas dominical"}}
+],recettes:[{nom:"Saint-Jacques poêlées, purée de petits pois",temps:"20 min",tmTemps:"18 min",tags:["Festif","Élégant"],ingredients:[{q:16,u:"",n:"Saint-Jacques"},{q:500,u:"g",n:"petits pois surgelés"},{q:1,u:"",n:"échalote"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"citron, sel, poivre"}],etapes:["Cuire les petits pois 5 min. Mixer avec un trait d'huile. Saler.","Saisir les Saint-Jacques 1 min de chaque côté dans huile très chaude.","Dresser Saint-Jacques sur purée de petits pois. Citron."],tmEtapes:[{badge:"Bol",text:"Petits pois + 200ml eau dans le bol. Cuire 6 min / 100°C / vit 1. Mixer 30 sec / vit 6-10. Assaisonner."},{badge:"Fin",text:"Poêler Saint-Jacques 1 min de chaque côté. Dresser sur purée."}],tmTip:"Purée de petits pois veloutée en 1 min de mixage.",simon:"Purée sans beurre ni crème pour Simon (naturellement sans lactose)."}],
+courses:{"Fruits et légumes":["Tomates 6","Courgettes 4","Aubergines 2","Poivrons 4","Petits pois surgelés 500g","Ail 2 têtes","Échalotes 4","Basilic 2 bottes","Citrons 5"],"Viandes et poissons":["Saint-Jacques 16","Côtelettes d'agneau 8","Bœuf à brochettes 600g","Poulet fermier 1,2kg"],"Épicerie":["Riz pour paella 300g","Pâtes 500g","Riz complet 250g","Safran 1 dose"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Œufs fermiers 8","Beurre 200g","Parmesan 100g"],"Bouillons & condiments":["Herbes de Provence","Safran","Paprika"]}},
+
+// SEMAINES 11-20 : Format condensé
+{weekKey:"2026-07-13",label:"Semaine du 13 juillet 2026",mois:"juillet",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Bœuf en daube provençale",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Poisson blanc vapeur, légumes d'été",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Poisson vapeur et légumes",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Trofie au pesto genovese",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Salade paysanne et pain de campagne",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Poulet grillé aux herbes, légumes sautés",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Poulet grillé aux herbes et légumes",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Soupe de poivrons grillés froide",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Soupe de poivrons grillés",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Tartare de saumon, avocat et riz soufflé",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Assiette de charcuteries et légumes crus",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Gigot d'agneau rôti aux herbes",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Gigot d'agneau rôti",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Bœuf en daube provençale",note:"Grand repas dominical"}}],recettes:[{nom:"Trofie au pesto genovese",temps:"15 min",tmTemps:"15 min",tags:["Rapide","Italien"],ingredients:[{q:400,u:"g",n:"trofie ou fusilli"},{q:150,u:"g",n:"pesto basilic"},{q:200,u:"g",n:"haricots verts"},{q:200,u:"g",n:"pommes de terre"},{q:50,u:"g",n:"parmesan râpé"},{q:1,u:"",n:"citron"}],etapes:["Cuire pâtes avec haricots verts et pommes de terre en dés 10 min.","Égoutter, mélanger avec pesto. Parmesan et citron."],tmEtapes:[{badge:"Bol",text:"Pâtes + haricots verts + pommes de terre + eau. Cuire 10 min / 100°C / sens inverse / vit 1."},{badge:"Fin",text:"Égoutter. Mélanger avec pesto et parmesan."}],tmTip:"Tout cuit ensemble en une seule fois.",simon:"Remplacer parmesan par levure nutritionnelle."}],courses:{"Fruits et légumes":["Poivrons 6","Courgettes 3","Tomates 4","Haricots verts 300g","Pommes de terre 300g","Avocat 2","Ail 2 têtes","Basilic 3 bottes","Citrons 4"],"Viandes et poissons":["Poisson blanc 600g","Saumon frais 400g","Blancs de poulet 800g","Gigot d'agneau 1,2kg","Bœuf à braiser 800g"],"Épicerie":["Trofie ou fusilli 400g","Pesto basilic 200g","Riz soufflé 100g"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Œufs 8","Parmesan 100g","Charcuteries 300g","Beurre 200g"],"Bouillons & condiments":["Herbes de Provence","Romarin","Thym"]}},
+
+{weekKey:"2026-07-20",label:"Semaine du 20 juillet 2026",mois:"juillet",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Poulet rôti thym et citron",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Bar en papillote aux herbes et tomates",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Bar en papillote et légumes",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Risotto d'été aux courgettes et menthe",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Salade de tomates variées et burrata",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Entrecôte sauce chimichurri, maïs grillé",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Entrecôte sauce chimichurri et maïs",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Gaspacho de concombre et menthe",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Gaspacho de concombre et menthe",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Crevettes en curry léger, riz basmati",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Poke bowl saumon avocat et riz",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Travers de porc laqués miel soja",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Travers de porc laqués",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Poulet rôti au thym, citron et ail",note:"Grand repas dominical"}}],recettes:[{nom:"Crevettes en curry léger, riz basmati",temps:"20 min",tmTemps:"18 min",tags:["Rapide","Exotique"],ingredients:[{q:600,u:"g",n:"crevettes décortiquées"},{q:400,u:"ml",n:"lait de coco"},{q:250,u:"g",n:"riz basmati"},{q:2,u:"c.à.s",n:"curry en poudre"},{q:2,u:"",n:"gousses d'ail"},{q:1,u:"",n:"citron vert, coriandre, sel"}],etapes:["Cuire le riz basmati 12 min.","Faire revenir ail et curry 1 min. Ajouter lait de coco, mijoter 5 min.","Ajouter crevettes, cuire 3 min. Citron vert et coriandre."],tmEtapes:[{badge:"Bol",text:"Riz + 500ml eau + sel dans le bol. Cuire 12 min / 100°C / sens inverse / vit 1."},{badge:"Fin",text:"Sauce curry au lait de coco et crevettes à la poêle. Servir sur riz."}],tmTip:"Riz parfait pendant que la sauce se prépare.",simon:"Aucune adaptation. Lait de coco sans lactose."}],courses:{"Fruits et légumes":["Tomates variées 600g","Courgettes 4","Concombre 2","Maïs 4 épis","Avocat 4","Menthe 2 bottes","Coriandre 2 bottes","Ail 2 têtes","Citrons 5","Citrons verts 4"],"Viandes et poissons":["Bar 1,2kg","Entrecôtes 4","Crevettes 600g","Saumon frais 400g","Travers de porc 1kg","Poulet fermier 1,2kg"],"Épicerie":["Riz basmati 500g","Riz pour sushi 250g","Curry en poudre","Lait de coco 400ml","Sauce soja 200ml","Miel 1 pot"],"Sans lactose pour Simon":["Lait de coco naturellement sans lactose ✓"],"Produits frais & laitiers":["Burrata 2","Beurre 200g","Œufs 8"],"Bouillons & condiments":["Curry","Gingembre","Coriandre séchée"]}},
+
+{weekKey:"2026-07-27",label:"Semaine du 27 juillet 2026",mois:"juillet",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Tajine de légumes d'été",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Pageot grillé, salade de tomates et basilic",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Pageot grillé et salade de tomates",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Pâtes poulpe à la tomate et câpres",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Salade composée légumes grillés et chèvre",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Blanquette de dinde légère aux légumes",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Blanquette de dinde et légumes",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Crème froide d'avocat et concombre",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Crème froide d'avocat et concombre",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Brochettes de crevettes au barbecue, taboulé",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Pizza blanche courgettes et ricotta",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côte de bœuf, légumes rôtis et sauce chimichurri",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Côte de bœuf et légumes rôtis",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Tajine d'agneau aux légumes d'été et épices",note:"Grand repas dominical"}}],recettes:[{nom:"Tajine d'agneau aux légumes d'été et épices",temps:"60 min",tmTemps:"50 min",tags:["Méditerranéen","Épicé"],ingredients:[{q:1,u:"kg",n:"épaule d'agneau en morceaux"},{q:2,u:"",n:"courgettes"},{q:2,u:"",n:"aubergines"},{q:400,u:"g",n:"tomates en boîte"},{q:2,u:"",n:"oignons"},{q:1,u:"c.à.s",n:"ras el hanout"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"coriandre, sel"}],etapes:["Faire revenir oignons et agneau 5 min.","Ajouter légumes, tomates, ras el hanout. Couvrir.","Mijoter 45 min à feu doux. Parsemer coriandre."],tmEtapes:[{badge:"Bol",text:"Oignons + huile. 3 min / 120°C / vit 1. Ajouter agneau, légumes, tomates, épices. Cuire 45 min / 95°C / sens inverse / vit mijotage."}],tmTip:"Tajine parfait sans tajine — le TM31 reproduit la cuisson douce.",simon:"Réduire le ras el hanout pour Simon."}],courses:{"Fruits et légumes":["Aubergines 4","Courgettes 6","Tomates 6","Concombre 2","Avocat 3","Ail 2 têtes","Oignons 4","Coriandre 3 bottes","Citrons 5"],"Viandes et poissons":["Pageot 1kg","Dinde 800g","Crevettes 600g","Côte de bœuf 1,2kg","Épaule d'agneau 1kg","Poulpe 600g"],"Épicerie":["Pâtes 500g","Semoule 250g","Câpres 1 pot","Ras el hanout","Tomates boîte 800g"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Ricotta 250g","Chèvre 150g","Beurre 200g","Œufs 8"],"Bouillons & condiments":["Ras el hanout","Cumin","Cannelle"]}},
+
+{weekKey:"2026-08-03",label:"Semaine du 3 août 2026",mois:"août",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Rôti de veau aux légumes provençaux",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Thon mi-cuit sésame, salade d'algues",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Thon mi-cuit et salade",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Capellini à la sauce vierge",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Salade de farro aux légumes grillés",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Poulet à la tomate et olives noires",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Poulet à la tomate et olives",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Soupe froide de melon au gingembre",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Soupe froide de melon",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Gambas grillées à la plancha, légumes",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Tartines de légumes grillés et tapenade",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côtelettes de porc, pêches grillées et riz",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Côtelettes de porc et pêches grillées",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Rôti de veau aux légumes provençaux",note:"Grand repas dominical"}}],recettes:[{nom:"Gambas grillées à la plancha, légumes",temps:"15 min",tmTemps:"15 min",tags:["Rapide","Estival"],ingredients:[{q:800,u:"g",n:"gambas crues"},{q:3,u:"",n:"courgettes"},{q:2,u:"",n:"poivrons"},{q:4,u:"",n:"gousses d'ail"},{q:1,u:"",n:"citron"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"fleur de sel, poivre"}],etapes:["Griller les légumes en tranches à la plancha 3 min.","Cuire les gambas 2 min de chaque côté.","Assaisonner ail, citron, fleur de sel."],tmEtapes:[{badge:"Varoma",text:"Légumes + 1L eau. Cuire 10 min / Varoma / vit 1. Gambas poêlées séparément."}],tmTip:"Légumes vapeur tendres, gambas saisies à la poêle.",simon:"Aucune adaptation."}],courses:{"Fruits et légumes":["Tomates 6","Courgettes 5","Poivrons 4","Melon 2","Pêches 4","Aubergines 2","Ail 3 têtes","Basilic 2 bottes","Gingembre frais 50g","Citrons 5"],"Viandes et poissons":["Thon rouge 400g","Gambas 800g","Blancs de poulet 800g","Côtelettes de porc 8","Rôti de veau 1kg"],"Épicerie":["Capellini 400g","Farro 250g","Olives noires 150g","Tapenade 1 pot","Sésame 50g"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Œufs 8","Beurre 200g","Parmesan 100g"],"Bouillons & condiments":["Fleur de sel","Herbes de Provence","Vinaigre balsamique"]}},
+
+{weekKey:"2026-08-10",label:"Semaine du 10 août 2026",mois:"août",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Poulet rôti au citron et romarin",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Sole meunière, haricots beurre vapeur",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Sole meunière et haricots beurre",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Gnocchis sautés aux légumes d'été",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Salade composée légumes d'été et mozzarella",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Sauté de bœuf aux légumes et gingembre",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Sauté de bœuf aux légumes et gingembre",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Gazpacho de pastèque et menthe",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Gazpacho de pastèque et menthe",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Filets de daurade grillés, légumes en papillote",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Salade de semoule aux herbes fraîches",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côte de bœuf sauce béarnaise (sans pour Simon)",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Côte de bœuf et légumes",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Poulet rôti au citron, romarin et ail",note:"Grand repas dominical"}}],recettes:[{nom:"Gnocchis sautés aux légumes d'été",temps:"20 min",tmTemps:"18 min",tags:["Rapide","Saison"],ingredients:[{q:500,u:"g",n:"gnocchis frais"},{q:2,u:"",n:"courgettes"},{q:200,u:"g",n:"tomates cerises"},{q:2,u:"",n:"gousses d'ail"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"basilic, parmesan, sel, poivre"}],etapes:["Poêler les gnocchis 5 min dans l'huile jusqu'à dorure.","Ajouter courgettes en dés, tomates et ail. Sauter 5 min.","Parsemer basilic et parmesan."],tmEtapes:[{badge:"Fin",text:"Les gnocchis se font mieux à la poêle pour les dorer. Légumes sautés avec."}],tmTip:"Poêle préférable pour le croustillant des gnocchis.",simon:"Remplacer parmesan par levure nutritionnelle."}],courses:{"Fruits et légumes":["Courgettes 5","Tomates cerises 400g","Pastèque 1","Haricots beurre 400g","Poivrons 3","Aubergines 2","Ail 2 têtes","Menthe 2 bottes","Basilic 2 bottes","Citrons 4","Gingembre 50g"],"Viandes et poissons":["Soles 4","Bœuf à sauter 600g","Filets de daurade 600g","Côte de bœuf 1,2kg","Poulet fermier 1,2kg"],"Épicerie":["Gnocchis frais 500g","Semoule 250g","Pâtes 400g"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Mozzarella 250g","Beurre 250g","Œufs 8","Parmesan 100g"],"Bouillons & condiments":["Romarin frais","Estragon","Sauce soja"]}},
+
+{weekKey:"2026-08-17",label:"Semaine du 17 août 2026",mois:"août",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Épaule d'agneau rôtie aux épices",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Lieu noir citronné, courgettes poêlées",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Lieu noir citronné et courgettes",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Linguines aux palourdes et persil",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Assiette estivale : tomates, charcuteries, crudités",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Filet de dinde mariné, riz et brocoli",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Filet de dinde mariné et brocoli",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Crème froide de concombre à la menthe",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Crème froide de concombre",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Poulpe à la galicienne, pommes de terre",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Tarte tomates basilic et chèvre",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Magret de canard aux figues et miel",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Magret de canard aux figues",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Épaule d'agneau rôtie aux épices et légumes",note:"Grand repas dominical"}}],recettes:[{nom:"Magret de canard aux figues et miel",temps:"30 min",tmTemps:"25 min",tags:["Festif","Saison"],ingredients:[{q:2,u:"",n:"magrets de canard"},{q:8,u:"",n:"figues fraîches"},{q:3,u:"c.à.s",n:"miel liquide"},{q:50,u:"ml",n:"vinaigre balsamique"},{q:800,u:"g",n:"pommes de terre"},{q:1,u:"",n:"sel, poivre"}],etapes:["Cuire les pommes de terre vapeur. Écraser à l'huile pour Simon.","Quadriller peau des magrets. Cuire côté peau 8 min. Retourner 4 min.","Déglacer avec miel et balsamique. Ajouter figues coupées. Mijoter 5 min.","Trancher les magrets. Servir avec sauce figues et purée."],tmEtapes:[{badge:"Bol",text:"Pommes de terre + eau. Cuire 20 min / 100°C / vit 1. Écraser."},{badge:"Fin",text:"Magrets poêlés pendant la cuisson. Sauce figues-balsamique-miel séparément."}],tmTip:"Purée maison sans effort pendant que vous poêlez les magrets.",simon:"Purée à l'huile d'olive pour Simon (sans beurre ni lait)."}],courses:{"Fruits et légumes":["Tomates 6","Courgettes 4","Concombre 2","Figues fraîches 8","Brocoli 600g","Pommes de terre 800g","Ail 2 têtes","Menthe 2 bottes","Basilic 2 bottes","Citrons 4"],"Viandes et poissons":["Lieu noir 600g","Filet de dinde 600g","Poulpe 800g","Magrets de canard 2","Épaule d'agneau 1,2kg"],"Épicerie":["Linguines 400g","Palourdes 500g","Pâte brisée 1","Miel 1 pot","Vinaigre balsamique 100ml"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Chèvre 200g","Beurre 200g","Œufs 8"],"Bouillons & condiments":["Miel","Vinaigre balsamique","Piment doux"]}},
+
+{weekKey:"2026-08-24",label:"Semaine du 24 août 2026",mois:"août",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Poulet fermier rôti au thym",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Cabillaud rôti poivrons confits",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Cabillaud et poivrons confits",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Rigatoni à l'arrabbiata douce",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Salade de lentilles aux herbes et vinaigrette",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Veau sauté aux tomates et câpres",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Veau sauté aux tomates et câpres",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Soupe froide de tomates anciennes",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Soupe froide de tomates anciennes",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Encornets farcis aux légumes et riz",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Paninis grillés légumes du soleil et chèvre",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côte de porc aux prunes et gingembre",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Côte de porc aux prunes",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Poulet fermier rôti au thym et légumes",note:"Grand repas dominical"}}],recettes:[{nom:"Veau sauté aux tomates et câpres",temps:"30 min",tmTemps:"25 min",tags:["Méditerranéen","Saison"],ingredients:[{q:700,u:"g",n:"veau à sauter"},{q:400,u:"g",n:"tomates cerises"},{q:2,u:"c.à.s",n:"câpres"},{q:2,u:"",n:"oignons"},{q:3,u:"",n:"gousses d'ail"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"basilic, sel, poivre"}],etapes:["Saisir le veau en morceaux 5 min.","Ajouter oignons, ail, tomates, câpres. Mijoter 20 min.","Parsemer de basilic. Servir avec pâtes ou riz."],tmEtapes:[{badge:"Bol",text:"Oignons + ail + huile. 3 min / 120°C / vit 1. Ajouter veau, tomates, câpres. Cuire 25 min / 100°C / sens inverse / vit mijotage."}],tmTip:"Mijoté savoureux sans surveillance.",simon:"Aucune adaptation."}],courses:{"Fruits et légumes":["Tomates cerises 400g","Tomates 6","Poivrons 4","Prunes 400g","Courgettes 3","Ail 2 têtes","Oignons 3","Basilic 2 bottes","Persil 2 bottes","Citrons 4","Gingembre 50g"],"Viandes et poissons":["Cabillaud 600g","Veau à sauter 700g","Encornets 800g","Côte de porc 4","Poulet fermier 1,2kg"],"Épicerie":["Rigatoni 400g","Lentilles 250g","Câpres 1 pot","Riz 250g"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Chèvre 150g","Beurre 200g","Œufs 8"],"Bouillons & condiments":["Piment d'Espelette","Câpres","Herbes de Provence"]}},
+
+{weekKey:"2026-08-31",label:"Semaine du 31 août 2026",mois:"septembre",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Bœuf bourguignon",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Maquereau citron et pommes de terre sarladaises",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Maquereau et pommes de terre sarladaises",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Pappardelle au ragù de légumes d'automne",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Salade de fin d'été tomates, figues et roquette",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Poulet aux figues fraîches et miel",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Poulet aux figues et miel",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Velouté de courge butternut et noix de muscade",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Velouté de courge butternut",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Filet de sandre poêlé, lentilles du Puy",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Tarte flambée maison aux oignons et lardons",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côte de veau aux champignons et crème (sans crème pour Simon)",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Côte de veau aux champignons",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Bœuf bourguignon aux légumes racines",note:"Grand repas dominical"}}],recettes:[{nom:"Bœuf bourguignon aux légumes racines",temps:"120 min",tmTemps:"90 min",tags:["Traditionnel","Automne"],ingredients:[{q:1,u:"kg",n:"bœuf à braiser"},{q:3,u:"",n:"carottes"},{q:2,u:"",n:"oignons"},{q:200,u:"g",n:"champignons"},{q:500,u:"ml",n:"vin rouge"},{q:300,u:"ml",n:"bouillon de bœuf"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"bouquet garni, sel, poivre"}],etapes:["Faire revenir oignons et bœuf en morceaux 5 min.","Ajouter carottes, champignons, vin, bouillon, bouquet garni.","Mijoter 2h à feu doux jusqu'à tendreté. Rectifier assaisonnement."],tmEtapes:[{badge:"Bol",text:"Oignons + huile. 3 min / 120°C / vit 1. Ajouter bœuf, carottes, champignons, vin, bouillon, bouquet garni."},{badge:"Cuisson",text:"Cuire 90 min / 90°C / sens inverse / vit mijotage."}],tmTip:"Le TM31 réduit le temps de 2h à 1h30 — résultat identique.",simon:"Aucune adaptation. Viande très tendre."}],courses:{"Fruits et légumes":["Figues 8","Courge butternut 1kg","Champignons 400g","Carottes 500g","Oignons 5","Tomates 4","Roquette 150g","Ail 2 têtes","Noix 100g","Citrons 4"],"Viandes et poissons":["Maquereaux 4","Blancs de poulet 800g","Filets de sandre 600g","Bœuf à braiser 1kg","Côte de veau 4"],"Épicerie":["Pappardelle 400g","Lentilles du Puy 250g","Vin rouge 500ml","Pâte fine 1"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Lardons 200g","Beurre 250g","Crème 200ml","Œufs 8"],"Bouillons & condiments":["Bouillon bœuf","Muscade","Herbes de Provence"]}},
+
+{weekKey:"2026-09-07",label:"Semaine du 7 septembre 2026",mois:"septembre",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Pintade rôtie aux raisins et noix",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Filet de bar meunière, butternut rôti",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Filet de bar et butternut rôti",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Tagliatelles aux cèpes et persil",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Velouté de potimarron et pain grillé",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Escalopes de poulet panées, haricots verts",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Escalopes panées et haricots verts",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Crème de panais et marrons",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Crème de panais et marrons",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Palourdes à la marinière, pain",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Quiche champignons et fromage de chèvre",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Magret de canard aux raisins et poivre vert",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Magret de canard aux raisins",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Pintade rôtie aux raisins, noix et légumes",note:"Grand repas dominical"}}],recettes:[{nom:"Tagliatelles aux cèpes et persil",temps:"25 min",tmTemps:"20 min",tags:["Saison","Automne"],ingredients:[{q:400,u:"g",n:"tagliatelles fraîches"},{q:400,u:"g",n:"cèpes frais ou surgelés"},{q:3,u:"",n:"gousses d'ail"},{q:1,u:"",n:"botte de persil plat"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:50,u:"g",n:"parmesan râpé"},{q:1,u:"",n:"sel, poivre"}],etapes:["Sauter les cèpes à l'ail dans l'huile 8 min.","Cuire les tagliatelles al dente.","Mélanger, parsemer persil et parmesan."],tmEtapes:[{badge:"Bol",text:"Ail + huile. 2 min / 120°C / vit 1. Ajouter cèpes, cuire 8 min / 120°C / sens inverse / vit 1."},{badge:"Fin",text:"Cuire tagliatelles séparément. Mélanger avec sauce cèpes, parsemer persil et parmesan."}],tmTip:"Cèpes parfumés sans risque de brûler.",simon:"Remplacer parmesan par levure nutritionnelle."}],courses:{"Fruits et légumes":["Cèpes 400g","Potimarron 1kg","Panais 500g","Courge butternut 800g","Haricots verts 400g","Raisins 300g","Marrons 200g","Ail 3 têtes","Persil 3 bottes","Citrons 4"],"Viandes et poissons":["Filets de bar 600g","Blancs de poulet 800g","Palourdes 800g","Magrets de canard 2","Pintade 1,2kg"],"Épicerie":["Tagliatelles fraîches 400g","Chapelure 200g","Vin blanc sec 200ml"],"Sans lactose pour Simon":["Crème de riz 200ml"],"Produits frais & laitiers":["Chèvre 150g","Beurre 250g","Crème 200ml","Œufs 8","Parmesan 100g"],"Bouillons & condiments":["Poivre vert","Muscade","Herbes de Provence"]}},
+
+{weekKey:"2026-09-14",label:"Semaine du 14 septembre 2026",mois:"septembre",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Pot-au-feu de légumes d'automne",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Rouget barbet grillé, légumes rôtis",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Rouget grillé et légumes rôtis",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Penne aux champignons et épinards",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Soupe de potiron au lait de coco",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Cuisse de poulet aux légumes d'automne",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Cuisse de poulet et légumes d'automne",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Velouté de céleri pomme verte",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Velouté de céleri pomme verte",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Saint-Jacques poêlées, poireaux fondants",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Salade de roquette, poire et noix",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Rôti de porc aux pommes et cidre",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Rôti de porc aux pommes et cidre",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Pot-au-feu de légumes d'automne et bœuf",note:"Grand repas dominical"}}],recettes:[{nom:"Saint-Jacques poêlées, poireaux fondants",temps:"20 min",tmTemps:"18 min",tags:["Saison","Élégant"],ingredients:[{q:16,u:"",n:"Saint-Jacques"},{q:4,u:"",n:"poireaux"},{q:2,u:"c.à.s",n:"huile d'olive"},{q:100,u:"ml",n:"vin blanc"},{q:1,u:"",n:"citron, sel, poivre"}],etapes:["Cuire les poireaux en rondelles avec vin blanc et huile 15 min à feu doux.","Saisir les Saint-Jacques 1 min de chaque côté.","Servir Saint-Jacques sur poireaux fondants. Citron."],tmEtapes:[{badge:"Bol",text:"Poireaux + vin blanc + huile. Cuire 15 min / 100°C / sens inverse / vit 1."},{badge:"Fin",text:"Saint-Jacques poêlées 1 min de chaque côté. Dresser sur poireaux."}],tmTip:"Poireaux fondants sans effort, Saint-Jacques saisies à part.",simon:"Aucune adaptation naturellement."}],courses:{"Fruits et légumes":["Potiron 1kg","Céleri rave 600g","Poireaux 6","Champignons 400g","Épinards 300g","Carottes 500g","Pommes 4","Poires 4","Roquette 150g","Noix 100g","Ail 2 têtes","Citrons 5"],"Viandes et poissons":["Rougets 600g","Saint-Jacques 16","Cuisses de poulet 8","Rôti de porc 1kg","Bœuf à pot-au-feu 800g"],"Épicerie":["Penne 400g","Lait de coco 400ml","Vin blanc sec 400ml","Cidre 200ml"],"Sans lactose pour Simon":["Lait de coco ✓ naturellement sans lactose","Crème de riz 200ml"],"Produits frais & laitiers":["Beurre 250g","Œufs 8"],"Bouillons & condiments":["Muscade","Herbes de Provence","Thym","Laurier"]}},
+
+{weekKey:"2026-09-21",label:"Semaine du 21 septembre 2026",mois:"septembre",prefs:["équilibré","saison","restes"],jours:[{jour:"Lundi",midi:{nom:"Restes : Poulet rôti automnal aux châtaignes",note:"Restes du dimanche soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Lieu jaune rôti, gratin de fenouil",note:"Cuisiné pour 4 — restes mardi midi"}},{jour:"Mardi",midi:{nom:"Lieu jaune et gratin de fenouil",note:"Restes du lundi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Gnocchis à la courge et sauge",note:"Cuisiné pour 4"}},{jour:"Mercredi",midi:{nom:"Soupe de carottes gingembre et coriandre",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Magret de canard aux poires et miel",note:"Cuisiné pour 4 — restes jeudi midi"}},{jour:"Jeudi",midi:{nom:"Magret de canard aux poires",note:"Restes du mercredi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Velouté de champignons et châtaignes",note:"Cuisiné pour 4 — restes vendredi midi"}},{jour:"Vendredi",midi:{nom:"Velouté de champignons et châtaignes",note:"Restes du jeudi soir",qui:"Geoffrey, Marianne, Simon",reste:true},soir:{nom:"Tartare de saumon aux agrumes et avocat",note:"Repas léger"}},{jour:"Samedi",midi:{nom:"Quiche poireaux et saumon fumé",note:"Repas cuisiné — tout le monde",reste:false},soir:{nom:"Côtes d'agneau, gratin dauphinois au lait végétal",note:"Cuisiné pour 4 — restes dimanche midi"}},{jour:"Dimanche",midi:{nom:"Côtes d'agneau et gratin dauphinois",note:"Restes du samedi soir — famille entière",reste:true},soir:{nom:"Poulet rôti automnal aux châtaignes et légumes",note:"Grand repas dominical"}}],recettes:[{nom:"Gnocchis à la courge et sauge",temps:"30 min",tmTemps:"25 min",tags:["Automne","Végétarien"],ingredients:[{q:500,u:"g",n:"gnocchis frais"},{q:400,u:"g",n:"courge butternut"},{q:10,u:"",n:"feuilles de sauge"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:50,u:"g",n:"parmesan"},{q:1,u:"",n:"sel, poivre, muscade"}],etapes:["Rôtir la courge en cubes au four 200°C 20 min.","Poêler les gnocchis dans l'huile 5 min. Ajouter sauge croustillante.","Mélanger avec courge rôtie et parmesan."],tmEtapes:[{badge:"Varoma",text:"Courge en cubes dans Varoma + 1L eau. Cuire 20 min / Varoma / vit 1. Gnocchis poêlés séparément."}],tmTip:"Courge tendre à la vapeur, gnocchis dorés à la poêle.",simon:"Remplacer parmesan par levure nutritionnelle."},
+{nom:"Velouté de champignons et châtaignes",temps:"25 min",tmTemps:"20 min",tags:["Automne","Réconfortant"],ingredients:[{q:400,u:"g",n:"champignons de Paris"},{q:200,u:"g",n:"châtaignes cuites"},{q:1,u:"",n:"oignon"},{q:700,u:"ml",n:"bouillon volaille"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"thym, sel, poivre"}],etapes:["Faire revenir oignon et champignons 5 min.","Ajouter châtaignes, bouillon, thym. Cuire 15 min.","Mixer jusqu'à velouté. Ajuster assaisonnement."],tmEtapes:[{badge:"Bol",text:"Oignon + huile. 2 min / 120°C / vit 1. Ajouter champignons, châtaignes, bouillon, thym. Cuire 15 min / 100°C / vit 1."},{badge:"Mixer",text:"Mixer 1 min / vit 5-10 progressivement. Assaisonner."}],tmTip:"Velouté soyeux en moins de 20 min.",simon:"Aucune adaptation. Très nourrissant."}],
+courses:{"Fruits et légumes":["Courge butternut 1,5kg","Champignons 500g","Châtaignes cuites 300g","Carottes 500g","Fenouil 2","Poireaux 4","Poires 4","Avocat 3","Gingembre 60g","Citrons 5","Agrumes 4","Sauge fraîche 1 botte","Coriandre 2 bottes"],"Viandes et poissons":["Lieu jaune 600g","Saumon fumé 200g","Saumon frais 400g","Magrets de canard 2","Côtes d'agneau 8","Poulet fermier 1,2kg"],"Épicerie":["Gnocchis frais 500g","Lait de coco 400ml","Bouillon volaille cubes 4"],"Sans lactose pour Simon":["Lait végétal avoine 1L","Crème de riz 200ml"],"Produits frais & laitiers":["Beurre 250g","Œufs 8","Parmesan 100g","Crème 200ml"],"Bouillons & condiments":["Miel","Sauge séchée","Muscade","Thym"]}
+}
+
+]; // fin WEEKS_DATA
+
+// Export
+if(typeof module !== 'undefined') module.exports = WEEKS_DATA;
+
+// ══ RECETTES PARTAGÉES — Pool commun pour toutes les semaines ══════════
+const SHARED_RECETTES = [
+  {nom:"Risotto aux petits pois et menthe fraîche",temps:"30 min",tmTemps:"25 min",tags:["Saison","Végétarien"],
+   ingredients:[{q:300,u:"g",n:"riz à risotto (Arborio)"},{q:300,u:"g",n:"petits pois frais ou surgelés"},{q:1,u:"",n:"oignon"},{q:1,u:"L",n:"bouillon légumes chaud"},{q:100,u:"ml",n:"vin blanc"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"menthe fraîche, sel, poivre"}],
+   etapes:["Faire revenir l'oignon haché dans l'huile 2 min.","Ajouter le riz, nacrer 2 min. Déglacer au vin blanc.","Verser le bouillon louche par louche en remuant. Cuire 18 min.","Ajouter les petits pois les 5 dernières minutes.","Incorporer la menthe ciselée hors du feu."],
+   tmEtapes:[{badge:"Bol",text:"Oignon + huile. 2 min / 120°C / vit 1. Ajouter riz, 1 min / 120°C / sens inverse / vit 1."},{badge:"Bol",text:"Ajouter vin blanc, bouillon chaud, sel. Cuire 18 min / 90°C / sens inverse / vit mijotage."},{badge:"Fin",text:"Ajouter petits pois 5 min avant la fin. Incorporer menthe hors du feu."}],
+   tmTip:"Le TM31 remue le risotto tout seul — zéro effort.",
+   simon:"Aucune adaptation. Naturellement sans lactose."},
+
+  {nom:"Soupe de courgettes, tartines et fromage frais",temps:"20 min",tmTemps:"15 min",tags:["Rapide","Saison"],
+   ingredients:[{q:4,u:"",n:"courgettes"},{q:1,u:"",n:"oignon"},{q:700,u:"ml",n:"bouillon volaille"},{q:2,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"sel, poivre, basilic"},{q:200,u:"g",n:"fromage frais"}],
+   etapes:["Faire revenir oignon et courgettes en dés 5 min.","Ajouter bouillon, cuire 10 min.","Mixer jusqu'à velouté. Assaisonner.","Servir avec tartines et fromage frais à côté."],
+   tmEtapes:[{badge:"Bol",text:"Oignon + huile. 2 min / 120°C / vit 1. Ajouter courgettes, bouillon. Cuire 12 min / 100°C / vit 1."},{badge:"Mixer",text:"Mixer 1 min / vit 5-10. Assaisonner. Servir avec tartines."}],
+   tmTip:"Velouté prêt en 15 min chrono.",
+   simon:"Servir le fromage frais séparément — Simon prend sa tartine sans."},
+
+  {nom:"Gigot d'agneau, gratin dauphinois (sans crème pour Simon)",temps:"90 min",tmTemps:"90 min",tags:["Festif","Traditionnel"],
+   ingredients:[{q:1.5,u:"kg",n:"gigot d'agneau"},{q:1,u:"kg",n:"pommes de terre"},{q:2,u:"",n:"gousses d'ail"},{q:400,u:"ml",n:"crème légère (adultes)"},{q:400,u:"ml",n:"bouillon volaille (pour Simon)"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"thym, romarin, sel, poivre"}],
+   etapes:["Préchauffer le four à 200°C.","Piquer le gigot d'ail, badigeonner d'huile, herbes, sel.","Préparer le gratin dans 2 plats : un avec crème (adultes), un avec bouillon (Simon).","Cuire gigot 60 min à 180°C. Cuire gratins 45 min.","Laisser reposer le gigot 10 min avant de découper."],
+   tmEtapes:[{badge:"Four",text:"Le gigot et les gratins se font au four. Le TM31 peut précuire les pommes de terre vapeur 15 min pour réduire le temps de gratin."},{badge:"Varoma",text:"Pommes de terre en rondelles dans Varoma + 1L eau. 15 min / Varoma / vit 1. Puis disposer dans les plats avec liquide et enfourner 30 min."}],
+   tmTip:"Les pommes de terre précuites réduisent le temps de gratin de moitié.",
+   simon:"Préparer un petit gratin individuel avec bouillon à la place de la crème."},
+
+  {nom:"Poulet rôti aux herbes, légumes printaniers rôtis",temps:"60 min",tmTemps:"60 min",tags:["Saison","Familial"],
+   ingredients:[{q:1.2,u:"kg",n:"poulet fermier entier"},{q:400,u:"g",n:"asperges vertes"},{q:300,u:"g",n:"petits pois frais"},{q:400,u:"g",n:"pommes de terre nouvelles"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"thym, romarin, citron, sel, poivre"}],
+   etapes:["Préchauffer four à 210°C.","Badigeonner poulet d'huile, herbes, citron, sel, poivre.","Disposer légumes autour du poulet dans le plat.","Rôtir 50 min. Servir avec jus de cuisson."],
+   tmEtapes:[{badge:"Four",text:"Le poulet rôti entier se fait au four. Pendant la cuisson, cuire les légumes au TM31."},{badge:"Varoma",text:"Asperges + pommes de terre dans Varoma + 1L eau. 18 min / Varoma / vit 1. Ajouter petits pois les 5 dernières minutes."}],
+   tmTip:"Le TM31 gère les légumes vapeur pendant que le poulet rôtit.",
+   simon:"Aucune adaptation."},
+
+  {nom:"Pâtes aux courgettes, pignons et citron",temps:"20 min",tmTemps:"18 min",tags:["Rapide","Végétarien"],
+   ingredients:[{q:400,u:"g",n:"pâtes longues (linguines)"},{q:3,u:"",n:"courgettes"},{q:50,u:"g",n:"pignons de pin"},{q:2,u:"",n:"gousses d'ail"},{q:1,u:"",n:"citron (zeste et jus)"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"basilic frais, sel, poivre"}],
+   etapes:["Cuire les pâtes. Dorer les pignons à sec 2 min.","Sauter courgettes râpées avec ail 4 min dans l'huile.","Mélanger pâtes, courgettes, pignons, zeste et jus de citron, basilic."],
+   tmEtapes:[{badge:"Bol",text:"Courgettes + ail + huile dans le bol. 5 min / 120°C / sens inverse / vit 1."},{badge:"Fin",text:"Cuire pâtes séparément. Dorer pignons à la poêle. Mélanger tout avec citron et basilic."}],
+   tmTip:"Les courgettes fondent doucement sans bruler.",
+   simon:"Aucune adaptation naturellement."},
+
+  {nom:"Velouté de petits pois à la menthe et tartines",temps:"20 min",tmTemps:"15 min",tags:["Saison","Rapide"],
+   ingredients:[{q:500,u:"g",n:"petits pois frais ou surgelés"},{q:1,u:"",n:"oignon"},{q:600,u:"ml",n:"bouillon volaille"},{q:2,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"bouquet de menthe, sel, poivre"}],
+   etapes:["Faire revenir l'oignon 2 min.","Ajouter petits pois et bouillon. Cuire 10 min.","Ajouter menthe. Mixer jusqu'à velouté lisse.","Servir avec tartines grillées."],
+   tmEtapes:[{badge:"Bol",text:"Oignon + huile. 2 min / 120°C / vit 1. Ajouter petits pois, bouillon. Cuire 10 min / 100°C / vit 1."},{badge:"Mixer",text:"Ajouter menthe. Mixer 1 min / vit 5-10 progressivement."}],
+   tmTip:"Velouté vert vif et onctueux en 15 min.",
+   simon:"Aucune adaptation. Naturellement sans lactose."},
+
+  {nom:"Sardines grillées, tian de légumes provençaux",temps:"35 min",tmTemps:"30 min",tags:["Saison","Méditerranéen"],
+   ingredients:[{q:8,u:"",n:"sardines fraîches vidées"},{q:2,u:"",n:"courgettes"},{q:2,u:"",n:"tomates"},{q:1,u:"",n:"oignon"},{q:2,u:"",n:"gousses d'ail"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"herbes de Provence, sel, poivre"}],
+   etapes:["Préchauffer four à 180°C. Couper légumes en rondelles, disposer dans plat en alternant.","Arroser d'huile, ail, herbes. Enfourner 25 min.","Griller les sardines 3 min de chaque côté. Servir ensemble."],
+   tmEtapes:[{badge:"Varoma",text:"Légumes en rondelles dans Varoma + 1L eau. Cuire 20 min / Varoma / vit 1."},{badge:"Fin",text:"Sardines grillées à la poêle 3 min de chaque côté. Servir avec légumes vapeur."}],
+   tmTip:"Tian vapeur plus léger que la version four.",
+   simon:"Aucune adaptation. Retirer arêtes."},
+
+  {nom:"Blanquette de veau aux légumes de saison",temps:"60 min",tmTemps:"45 min",tags:["Traditionnel","Saison"],
+   ingredients:[{q:800,u:"g",n:"veau en cubes"},{q:3,u:"",n:"carottes"},{q:200,u:"g",n:"champignons"},{q:2,u:"",n:"oignons"},{q:800,u:"ml",n:"bouillon volaille"},{q:2,u:"c.à.s",n:"farine"},{q:2,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"bouquet garni, sel, poivre, muscade"}],
+   etapes:["Blanchir le veau 5 min. Égoutter.","Faire un roux avec huile et farine 2 min. Délayer avec bouillon.","Ajouter veau, carottes, oignons, champignons, bouquet garni.","Mijoter 45 min à feu doux."],
+   tmEtapes:[{badge:"Bol",text:"Oignons + huile + farine. 3 min / 120°C / vit 2."},{badge:"Bol",text:"Verser bouillon progressivement / vit 4. Ajouter veau, carottes, champignons. 40 min / 95°C / sens inverse / vit mijotage."}],
+   tmTip:"Blanquette parfaite sans surveiller.",
+   simon:"Préparer SANS crème. Roux huile + bouillon uniquement."},
+
+  {nom:"Frittata aux légumes printaniers et salade verte",temps:"20 min",tmTemps:"18 min",tags:["Rapide","Végétarien"],
+   ingredients:[{q:8,u:"",n:"œufs fermiers"},{q:200,u:"g",n:"asperges vertes"},{q:1,u:"",n:"courgette"},{q:100,u:"g",n:"petits pois"},{q:2,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"sel, poivre, herbes de Provence"}],
+   etapes:["Cuire asperges et petits pois 5 min vapeur.","Sauter courgette 3 min à la poêle.","Battre les œufs, ajouter légumes, sel, poivre, herbes.","Cuire à feu moyen 8 min, finir 3 min sous le gril."],
+   tmEtapes:[{badge:"Varoma",text:"Asperges + petits pois dans Varoma + 1L eau. 8 min / Varoma / vit 1. Courgette sautée séparément."},{badge:"Fin",text:"Mélanger œufs battus + légumes. Cuire à la poêle ou au four."}],
+   tmTip:"Les légumes précuits vapeur gardent leur couleur vive.",
+   simon:"Aucune adaptation. Naturellement sans lactose."},
+
+  {nom:"Côte de bœuf grillée, gratin de courgettes",temps:"40 min",tmTemps:"35 min",tags:["Festif","Saison"],
+   ingredients:[{q:1.2,u:"kg",n:"côte de bœuf"},{q:4,u:"",n:"courgettes"},{q:2,u:"",n:"gousses d'ail"},{q:200,u:"ml",n:"bouillon (pour Simon) ou crème (adultes)"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"sel, poivre, thym"}],
+   etapes:["Préchauffer four à 200°C.","Trancher courgettes, disposer dans plat avec ail, liquide, thym. Enfourner 30 min.","Griller la côte de bœuf 6 min de chaque côté à feu vif.","Laisser reposer 5 min. Trancher et servir avec le gratin."],
+   tmEtapes:[{badge:"Varoma",text:"Courgettes + 1L eau dans Varoma. 15 min / Varoma / vit 1. Puis gratin rapide au four 15 min."},{badge:"Fin",text:"Côte de bœuf grillée à la poêle ou au barbecue pendant le gratin."}],
+   tmTip:"Courgettes précuites = gratin rapide.",
+   simon:"Gratin au bouillon séparé pour Simon."},
+
+  {nom:"Entrecôte grillée, frites maison et ratatouille",temps:"45 min",tmTemps:"40 min",tags:["Festif","Saison"],
+   ingredients:[{q:4,u:"",n:"entrecôtes"},{q:800,u:"g",n:"pommes de terre"},{q:2,u:"",n:"courgettes"},{q:2,u:"",n:"aubergines"},{q:3,u:"",n:"tomates"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"ail, basilic, sel, poivre"}],
+   etapes:["Ratatouille : sauter tous les légumes en dés 20 min avec ail et basilic.","Cuire les frites au four (pommes de terre en bâtonnets, huile, sel, 200°C 35 min).","Griller entrecôtes 3 min de chaque côté. Saler."],
+   tmEtapes:[{badge:"Bol",text:"Tous légumes ratatouille + huile + ail. 25 min / 100°C / sens inverse / vit 1."},{badge:"Fin",text:"Frites au four pendant ratatouille. Entrecôtes grillées à la poêle."}],
+   tmTip:"Ratatouille sans surveillance au TM31.",
+   simon:"Aucune adaptation."},
+
+  {nom:"Quiche légumes verts et salade (sans lait pour Simon)",temps:"40 min",tmTemps:"40 min",tags:["Saison","Végétarien"],
+   ingredients:[{q:1,u:"",n:"pâte brisée"},{q:4,u:"",n:"œufs"},{q:200,u:"ml",n:"crème (adultes) ou crème de riz (Simon)"},{q:200,u:"g",n:"asperges ou courgettes"},{q:100,u:"g",n:"gruyère râpé"},{q:1,u:"",n:"sel, poivre, muscade"}],
+   etapes:["Préchauffer four à 180°C. Foncer la pâte dans le moule.","Cuire les légumes vapeur 5 min. Disposer dans le fond.","Battre œufs et crème, assaisonner. Verser sur légumes.","Parsemer de gruyère. Enfourner 30 min."],
+   tmEtapes:[{badge:"Varoma",text:"Légumes dans Varoma + 1L eau. 8 min / Varoma / vit 1."},{badge:"Fin",text:"Battre œufs + crème / vit 4. Verser sur légumes. Cuire au four 30 min."}],
+   tmTip:"Légumes précuits garantissent une quiche bien dorée.",
+   simon:"Remplacer crème et gruyère par crème de riz — préparer sa portion dans un petit moule individuel."},
+
+  {nom:"Tarte aux légumes d'été et chèvre",temps:"35 min",tmTemps:"30 min",tags:["Saison","Végétarien"],
+   ingredients:[{q:1,u:"",n:"pâte feuilletée"},{q:2,u:"",n:"courgettes"},{q:2,u:"",n:"tomates"},{q:150,u:"g",n:"fromage de chèvre"},{q:2,u:"",n:"œufs"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"herbes de Provence, sel, poivre"}],
+   etapes:["Préchauffer four à 190°C. Étaler la pâte dans le moule.","Sauter courgettes en rondelles 5 min. Disposer sur la pâte.","Ajouter tranches de tomates et morceaux de chèvre.","Mélanger œufs battus + huile + herbes. Verser sur la tarte. Enfourner 25 min."],
+   tmEtapes:[{badge:"Bol",text:"Courgettes + huile. 5 min / 120°C / sens inverse / vit 1."},{badge:"Fin",text:"Disposer sur pâte avec tomates et chèvre. Appareil à tarte. Enfourner 25 min."}],
+   tmTip:"Courgettes précuites = tarte sans excès d'humidité.",
+   simon:"Servir la part de Simon sans chèvre — ajouter tapenade ou huile d'olive à la place."},
+
+  {nom:"Côte de porc aux prunes et gingembre",temps:"30 min",tmTemps:"25 min",tags:["Saison","Automne"],
+   ingredients:[{q:4,u:"",n:"côtes de porc"},{q:400,u:"g",n:"prunes fraîches"},{q:2,u:"c.à.s",n:"miel"},{q:20,u:"g",n:"gingembre frais râpé"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"sel, poivre"}],
+   etapes:["Poêler les côtes de porc 5 min de chaque côté. Réserver.","Dans la même poêle, cuire prunes dénoyautées avec miel et gingembre 5 min.","Remettre les côtes, napper de sauce. Mijoter 5 min."],
+   tmEtapes:[{badge:"Bol",text:"Prunes + miel + gingembre + huile. 8 min / 100°C / sens inverse / vit 1."},{badge:"Fin",text:"Côtes de porc poêlées séparément. Napper de sauce prunes."}],
+   tmTip:"Sauce prunes-gingembre concentrée en quelques minutes.",
+   simon:"Aucune adaptation."},
+
+  {nom:"Rôti de porc aux pommes et cidre",temps:"70 min",tmTemps:"60 min",tags:["Traditionnel","Saison"],
+   ingredients:[{q:1,u:"kg",n:"rôti de porc"},{q:4,u:"",n:"pommes"},{q:200,u:"ml",n:"cidre brut"},{q:2,u:"",n:"oignons"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"thym, laurier, sel, poivre"}],
+   etapes:["Préchauffer four à 180°C.","Saisir le rôti 5 min de chaque côté.","Disposer dans plat avec oignons, pommes en quartiers, cidre, herbes.","Cuire 1h en arrosant régulièrement."],
+   tmEtapes:[{badge:"Bol",text:"Oignons + huile. 3 min / 120°C / vit 1. Ajouter cidre, pommes, herbes, rôti."},{badge:"Cuisson",text:"50 min / 100°C / sens inverse / vit mijotage."}],
+   tmTip:"Le rôti reste moelleux à cuisson douce. Sauce réduite naturellement.",
+   simon:"Aucune adaptation."},
+
+  {nom:"Loup de mer grillé, fenouil braisé et tomates",temps:"30 min",tmTemps:"25 min",tags:["Saison","Élégant"],
+   ingredients:[{q:1.2,u:"kg",n:"loup de mer entier"},{q:2,u:"",n:"fenouils"},{q:300,u:"g",n:"tomates cerises"},{q:1,u:"",n:"citron"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"thym, sel, poivre"}],
+   etapes:["Préchauffer four à 200°C. Inciser le loup, glisser thym et citron.","Braiser fenouil en quartiers 15 min dans huile + eau.","Enfourner loup avec tomates 20 min.","Servir avec fenouil et jus de cuisson."],
+   tmEtapes:[{badge:"Varoma",text:"Fenouil + tomates dans Varoma + 1L eau. Loup sur plateau avec thym, citron, huile. 22 min / Varoma / vit 1."}],
+   tmTip:"Tout cuit ensemble en vapeur douce.",
+   simon:"Aucune adaptation. Retirer arêtes."},
+
+  {nom:"Brochettes de poulet mariné, taboulé",temps:"35 min",tmTemps:"25 min",tags:["Saison","Estival"],
+   ingredients:[{q:600,u:"g",n:"blancs de poulet"},{q:250,u:"g",n:"semoule fine"},{q:2,u:"",n:"tomates"},{q:1,u:"",n:"concombre"},{q:1,u:"",n:"bouquet de menthe et persil"},{q:2,u:"",n:"citrons"},{q:4,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"cumin, sel, poivre"}],
+   etapes:["Mariner poulet huile-citron-cumin 30 min. Embrocher, griller 10 min.","Ébouillanter semoule avec eau bouillante salée. Couvrir 5 min. Égrener.","Mélanger semoule, légumes coupés, herbes, citron, huile."],
+   tmEtapes:[{badge:"Bol",text:"Semoule + 250ml eau bouillante. 5 min repos couvercle fermé. Égrener 10 sec / vit 3."},{badge:"Fin",text:"Mélanger avec légumes et herbes. Brochettes grillées à part."}],
+   tmTip:"Semoule parfaite en 5 min.",simon:"Aucune adaptation."},
+
+  {nom:"Gigot d'agneau aux flageolets et herbes",temps:"90 min",tmTemps:"90 min",tags:["Traditionnel","Festif"],
+   ingredients:[{q:1.5,u:"kg",n:"gigot d'agneau"},{q:400,u:"g",n:"flageolets en boîte"},{q:3,u:"",n:"gousses d'ail"},{q:2,u:"",n:"oignons"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"romarin, thym, sel, poivre"}],
+   etapes:["Piquer gigot d'ail, badigeonner d'huile et herbes.","Rôtir 70 min à 180°C en arrosant.","Réchauffer flageolets avec oignons et thym 10 min.","Laisser reposer gigot 10 min, trancher et servir."],
+   tmEtapes:[{badge:"Bol",text:"Oignons + huile. 3 min / 120°C / vit 1. Ajouter flageolets, thym. 8 min / 90°C / sens inverse / vit 1."},{badge:"Fin",text:"Gigot au four pendant la préparation des flageolets."}],
+   tmTip:"Flageolets parfumés pendant que le gigot rôtit.",
+   simon:"Aucune adaptation."},
+
+  {nom:"Escalopes de veau milanaise, linguines",temps:"25 min",tmTemps:"22 min",tags:["Italien","Classique"],
+   ingredients:[{q:4,u:"",n:"escalopes de veau fines"},{q:100,u:"g",n:"chapelure"},{q:2,u:"",n:"œufs"},{q:400,u:"g",n:"linguines"},{q:1,u:"",n:"citron"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"sel, poivre, persil"}],
+   etapes:["Cuire les linguines al dente.","Paner les escalopes : farine, œuf, chapelure.","Cuire dans l'huile 3 min de chaque côté jusqu'à dorure.","Servir avec linguines, citron et persil."],
+   tmEtapes:[{badge:"Bol",text:"Linguines + eau + sel. Cuire selon paquet / 100°C / sens inverse / vit 1."},{badge:"Fin",text:"Escalopes milanaises à la poêle pendant la cuisson des pâtes."}],
+   tmTip:"Les pâtes cuisent seules pendant que vous panez les escalopes.",
+   simon:"Aucune adaptation."},
+
+  {nom:"Pintade rôtie aux raisins, noix et légumes",temps:"70 min",tmTemps:"70 min",tags:["Automne","Festif"],
+   ingredients:[{q:1.2,u:"kg",n:"pintade"},{q:300,u:"g",n:"raisins blancs"},{q:100,u:"g",n:"cerneaux de noix"},{q:300,u:"g",n:"champignons"},{q:3,u:"c.à.s",n:"huile d'olive"},{q:1,u:"",n:"thym, sel, poivre"}],
+   etapes:["Préchauffer four à 200°C.","Badigeonner pintade d'huile, sel, poivre, thym.","Rôtir 55 min. Ajouter raisins et champignons les 20 dernières minutes.","Parsemer de noix en fin de cuisson."],
+   tmEtapes:[{badge:"Four",text:"La pintade rôtit au four 55 min. Le TM31 peut cuire les champignons séparément."},{badge:"Bol",text:"Champignons + huile. 8 min / 120°C / sens inverse / vit 1."}],
+   tmTip:"Champignons parfumés pendant que la pintade rôtit.",
+   simon:"Aucune adaptation."},
+
+  {nom:"Pot-au-feu de légumes d'automne et bœuf",temps:"120 min",tmTemps:"90 min",tags:["Traditionnel","Automne"],
+   ingredients:[{q:800,u:"g",n:"bœuf à pot-au-feu (paleron)"},{q:4,u:"",n:"carottes"},{q:3,u:"",n:"poireaux"},{q:3,u:"",n:"navets"},{q:1,u:"",n:"céleri branche"},{q:2,u:"",n:"oignons"},{q:1,u:"",n:"bouquet garni, sel, poivre"}],
+   etapes:["Mettre bœuf dans grande casserole. Couvrir d'eau froide.","Porter à ébullition, écumer.","Ajouter tous les légumes et bouquet garni.","Mijoter 2h à feu doux.","Servir bouillon en entrée, puis légumes et viande."],
+   tmEtapes:[{badge:"Bol",text:"Bœuf + tous légumes en gros morceaux + bouquet garni + 1,5L eau + sel. Cuire 90 min / 95°C / sens inverse / vit mijotage."}],
+   tmTip:"Pot-au-feu en 90 min au lieu de 2h.",
+   simon:"Aucune adaptation. Très digeste."}
+];
+
+
 
 // ══ ACTIVE RECIPES (set when a week is loaded) ════════════════
 let activeRecettes = STATIC_RECETTES; // default fallback
@@ -1109,13 +1625,55 @@ function showToast(msg){
 
 // ══ INIT ══════════════════════════════════════════════════════
 (function init(){
-  // Try to load most recent saved week, or show home
+  // Force reload all pre-generated weeks (version bump clears stale cache)
+  const APP_VERSION = '3.0';
+  if(localStorage.getItem('menus_app_version') !== APP_VERSION){
+    getAllWeekKeys().forEach(k => deleteWeek(k));
+    localStorage.setItem('menus_app_version', APP_VERSION);
+  }
+  // Always reload fresh from WEEKS_DATA on every page load (in-memory store resets anyway)
+  const DATA_VERSION = '3.0';
+  try{
+    if(localStorage.getItem('menusfamille_version') !== DATA_VERSION){
+      getAllWeekKeys().forEach(k => deleteWeek(k));
+      localStorage.setItem('menusfamille_version', DATA_VERSION);
+    }
+  }catch(e){}
+
+  // Pre-load all 20 weeks from WEEKS_DATA into localStorage (always overwrite to get latest recipes)
+  if(typeof WEEKS_DATA !== 'undefined'){
+    WEEKS_DATA.forEach(week => {
+      const existing = loadWeek(week.weekKey);
+      // Always overwrite pre-generated weeks to ensure complete recipes
+      if(true){
+        saveWeek(week.weekKey, {
+          weekKey: week.weekKey,
+          savedAt: new Date().toISOString(),
+          prefs: week.prefs,
+          jours: week.jours,
+          recettes: week.recettes || [],
+          courses: Object.fromEntries(
+            Object.entries(week.courses).map(([cat, items]) => [
+              cat,
+              items.map(item => typeof item === 'string' ? {n: item, q: 1, u: ''} : item)
+            ])
+          )
+        });
+      }
+    });
+  }
+
+  // Load most recent saved week
   const keys=getAllWeekKeys();
   if(keys.length){
-    currentWeekKey=keys[0];
+    // Find the closest upcoming week
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0,10);
+    const future = keys.filter(k => k >= todayStr).sort();
+    const past = keys.filter(k => k < todayStr).sort().reverse();
+    currentWeekKey = (future.length ? future[0] : past[0]) || keys[0];
     displayWeek(currentWeekKey);
   } else {
-    // No saved weeks — show home
     const today=new Date();
     const dow=today.getDay()||7;
     const mon=new Date(today);mon.setDate(today.getDate()-dow+1);
@@ -1133,7 +1691,34 @@ function showToast(msg){
   renderRecipes();
   renderShopping();
   document.getElementById('portions-recipe-label').textContent='4 personnes';
+
+  // Update API key status display
+  updateApiKeyStatus();
 })();
+
+function updateApiKeyStatus(){
+  const has = hasApiKey();
+  // Home screen status
+  const statusEl = document.getElementById('home-apikey-status');
+  const labelEl = document.getElementById('home-apikey-label');
+  if(statusEl){
+    if(has){
+      statusEl.textContent='✓ Clé API configurée — génération IA active';
+      statusEl.style.cssText='font-size:12px;padding:8px 14px;border-radius:8px;margin-bottom:10px;text-align:center;background:#EAF2EB;color:#1E4A22;';
+      if(labelEl) labelEl.textContent='Modifier la clé API';
+    } else {
+      statusEl.textContent='⚠ Clé API non configurée — 20 semaines disponibles en local';
+      statusEl.style.cssText='font-size:12px;padding:8px 14px;border-radius:8px;margin-bottom:10px;text-align:center;background:var(--amber-pale);color:#7A5C10;';
+      if(labelEl) labelEl.textContent='Configurer la clé API';
+    }
+  }
+  // Hero button
+  const heroBtn = document.getElementById('apikey-hero-btn');
+  if(heroBtn){
+    heroBtn.textContent = has ? '🔑 Clé OK' : '🔑 Clé API';
+    heroBtn.style.color = has ? '#8BAF8D' : '';
+  }
+}
 </script>
 </body>
 </html>
