@@ -2039,6 +2039,84 @@ const SHARED_RECETTES = [
 
 
 // ══ ACTIVE RECIPES (set when a week is loaded) ════════════════
+
+// ══ RAYON ORDER (Leclerc optimisé) ═════════════════════════════
+const RAYON_ORDER = [
+  "Fruits et légumes",
+  "Viandes et poissons",
+  "Produits frais & laitiers",
+  "Produits frais et laitiers",
+  "Sans lactose pour Simon",
+  "Épicerie",
+  "Bouillons & condiments",
+  "Bouillons et condiments",
+  "Surgelés"
+];
+
+// Prix moyens estimés par article (€) — base Leclerc Drive
+const PRIX_MOYENS = {
+  // Fruits & légumes
+  "Asperges":3.5,"Pommes de terre":2.5,"Carottes":1.8,"Courgettes":2.0,
+  "Tomates":2.5,"Poivrons":2.8,"Aubergines":2.2,"Haricots verts":2.5,
+  "Épinards":2.0,"Fenouil":2.0,"Poireaux":2.5,"Brocoli":2.2,
+  "Petits pois":2.0,"Champignons":3.0,"Citrons":1.5,"Ail":1.2,
+  "Oignons":1.5,"Basilic":1.5,"Persil":1.2,"Menthe":1.2,
+  "Ciboulette":1.2,"Thym":1.0,"Coriandre":1.2,"Aneth":1.5,
+  "Courgettes":2.0,"Concombre":1.5,"Avocat":2.0,"Salade":1.5,
+  "Figues":3.5,"Cerises":4.0,"Poires":2.5,"Pommes":2.0,
+  "Prunes":3.0,"Abricots":3.5,"Raisins":3.0,"Pêches":2.5,
+  "Melon":3.5,"Pastèque":4.0,"Patates douces":2.0,"Courge":3.0,
+  "Panais":2.0,"Céleri":2.5,"Potiron":3.0,"Potimarron":3.5,
+  "Châtaignes":3.5,"Noix":3.0,"Amandes":4.0,
+  // Viandes & poissons
+  "Poulet":8.0,"Saumon":12.0,"Cabillaud":10.0,"Lieu":8.0,
+  "Truite":8.0,"Maquereau":5.0,"Thon":14.0,"Sardines":5.0,
+  "Crevettes":9.0,"Gambas":12.0,"Moules":5.0,"Palourdes":8.0,
+  "Dorade":10.0,"Bar":12.0,"Rouget":12.0,"Calmars":8.0,
+  "Poulpe":8.0,"Encornets":8.0,"Sandre":10.0,"Pageot":10.0,
+  "Bœuf":15.0,"Veau":14.0,"Agneau":16.0,"Porc":9.0,
+  "Dinde":8.0,"Canard":12.0,"Pintade":12.0,
+  "Steak haché":7.0,"Escalopes":10.0,"Côtelettes":12.0,
+  "Filet mignon":12.0,"Rôti":12.0,"Gigot":20.0,"Magret":14.0,
+  // Épicerie
+  "Pâtes":1.5,"Riz":2.0,"Quinoa":3.0,"Semoule":1.5,
+  "Lentilles":2.0,"Flageolets":1.5,"Farine":1.2,"Huile":5.0,
+  "Sauce tomate":1.5,"Tomates pelées":1.0,"Bouillon":2.0,
+  "Pesto":3.0,"Olives":2.5,"Câpres":2.0,"Tapenade":3.5,
+  "Miel":4.0,"Moutarde":2.0,"Vinaigre":2.5,"Soja":2.5,
+  "Curry":2.5,"Paprika":2.0,"Cumin":2.0,"Cannelle":2.0,
+  "Gnocchis":2.5,"Tagliatelles":2.5,"Lait de coco":2.0,
+  // Frais & laitiers
+  "Œufs":3.5,"Beurre":2.5,"Lait":1.5,"Yaourt":2.0,
+  "Fromage":4.0,"Mozzarella":2.5,"Parmesan":4.0,"Chèvre":3.5,
+  "Fromage blanc":2.0,"Ricotta":2.5,"Feta":3.0,"Crème":1.5,
+  "Burrata":3.5,"Jambon":4.0,"Lardons":2.5,"Saumon fumé":5.0,
+  // Sans lactose
+  "Crème de riz":2.5,"Lait de riz":2.0,"Boisson riz":2.0,
+  "Lait d'avoine":2.5,"Crème végétale":2.5
+};
+
+function estimateItemPrice(itemName){
+  const name = itemName.toLowerCase();
+  for(const [key, price] of Object.entries(PRIX_MOYENS)){
+    if(name.includes(key.toLowerCase())) return price;
+  }
+  return 2.5; // default
+}
+
+function estimateTotalBudget(courses){
+  if(!courses) return 0;
+  let total = 0;
+  for(const items of Object.values(courses)){
+    for(const item of items){
+      const name = typeof item === 'string' ? item : item.n;
+      total += estimateItemPrice(name);
+    }
+  }
+  return Math.round(total);
+}
+
+
 var activeRecettes = []; // default fallback
 
 // ══ RENDER PLANNING ═══════════════════════════════════════════
@@ -2527,18 +2605,15 @@ function openFirebaseSetupModal(){
       const existing = loadWeek(week.weekKey);
       // Always overwrite pre-generated weeks to ensure complete recipes
       if(true){
+        const nc={};
+        if(week.courses) Object.entries(week.courses).forEach(([cat,items])=>{nc[cat]=(items||[]).map(item=>typeof item==='string'?{n:item,q:1,u:''}:item);});
         saveWeek(week.weekKey, {
           weekKey: week.weekKey,
           savedAt: new Date().toISOString(),
           prefs: week.prefs,
           jours: week.jours,
           recettes: week.recettes || [],
-          courses: Object.fromEntries(
-            Object.entries(week.courses).map(([cat, items]) => [
-              cat,
-              items.map(item => typeof item === 'string' ? {n: item, q: 1, u: ''} : item)
-            ])
-          )
+          courses: nc
         });
       }
     });
@@ -2622,82 +2697,6 @@ function openFirebaseSetupModal(){
   if(window._fbReady){ checkFb(); }
   else { window._onFbReady = checkFb; setTimeout(checkFb, 3000); }
 })();
-
-// ══ RAYON ORDER (Leclerc optimisé) ═════════════════════════════
-const RAYON_ORDER = [
-  "Fruits et légumes",
-  "Viandes et poissons",
-  "Produits frais & laitiers",
-  "Produits frais et laitiers",
-  "Sans lactose pour Simon",
-  "Épicerie",
-  "Bouillons & condiments",
-  "Bouillons et condiments",
-  "Surgelés"
-];
-
-// Prix moyens estimés par article (€) — base Leclerc Drive
-const PRIX_MOYENS = {
-  // Fruits & légumes
-  "Asperges":3.5,"Pommes de terre":2.5,"Carottes":1.8,"Courgettes":2.0,
-  "Tomates":2.5,"Poivrons":2.8,"Aubergines":2.2,"Haricots verts":2.5,
-  "Épinards":2.0,"Fenouil":2.0,"Poireaux":2.5,"Brocoli":2.2,
-  "Petits pois":2.0,"Champignons":3.0,"Citrons":1.5,"Ail":1.2,
-  "Oignons":1.5,"Basilic":1.5,"Persil":1.2,"Menthe":1.2,
-  "Ciboulette":1.2,"Thym":1.0,"Coriandre":1.2,"Aneth":1.5,
-  "Courgettes":2.0,"Concombre":1.5,"Avocat":2.0,"Salade":1.5,
-  "Figues":3.5,"Cerises":4.0,"Poires":2.5,"Pommes":2.0,
-  "Prunes":3.0,"Abricots":3.5,"Raisins":3.0,"Pêches":2.5,
-  "Melon":3.5,"Pastèque":4.0,"Patates douces":2.0,"Courge":3.0,
-  "Panais":2.0,"Céleri":2.5,"Potiron":3.0,"Potimarron":3.5,
-  "Châtaignes":3.5,"Noix":3.0,"Amandes":4.0,
-  // Viandes & poissons
-  "Poulet":8.0,"Saumon":12.0,"Cabillaud":10.0,"Lieu":8.0,
-  "Truite":8.0,"Maquereau":5.0,"Thon":14.0,"Sardines":5.0,
-  "Crevettes":9.0,"Gambas":12.0,"Moules":5.0,"Palourdes":8.0,
-  "Dorade":10.0,"Bar":12.0,"Rouget":12.0,"Calmars":8.0,
-  "Poulpe":8.0,"Encornets":8.0,"Sandre":10.0,"Pageot":10.0,
-  "Bœuf":15.0,"Veau":14.0,"Agneau":16.0,"Porc":9.0,
-  "Dinde":8.0,"Canard":12.0,"Pintade":12.0,
-  "Steak haché":7.0,"Escalopes":10.0,"Côtelettes":12.0,
-  "Filet mignon":12.0,"Rôti":12.0,"Gigot":20.0,"Magret":14.0,
-  // Épicerie
-  "Pâtes":1.5,"Riz":2.0,"Quinoa":3.0,"Semoule":1.5,
-  "Lentilles":2.0,"Flageolets":1.5,"Farine":1.2,"Huile":5.0,
-  "Sauce tomate":1.5,"Tomates pelées":1.0,"Bouillon":2.0,
-  "Pesto":3.0,"Olives":2.5,"Câpres":2.0,"Tapenade":3.5,
-  "Miel":4.0,"Moutarde":2.0,"Vinaigre":2.5,"Soja":2.5,
-  "Curry":2.5,"Paprika":2.0,"Cumin":2.0,"Cannelle":2.0,
-  "Gnocchis":2.5,"Tagliatelles":2.5,"Lait de coco":2.0,
-  // Frais & laitiers
-  "Œufs":3.5,"Beurre":2.5,"Lait":1.5,"Yaourt":2.0,
-  "Fromage":4.0,"Mozzarella":2.5,"Parmesan":4.0,"Chèvre":3.5,
-  "Fromage blanc":2.0,"Ricotta":2.5,"Feta":3.0,"Crème":1.5,
-  "Burrata":3.5,"Jambon":4.0,"Lardons":2.5,"Saumon fumé":5.0,
-  // Sans lactose
-  "Crème de riz":2.5,"Lait de riz":2.0,"Boisson riz":2.0,
-  "Lait d'avoine":2.5,"Crème végétale":2.5
-};
-
-function estimateItemPrice(itemName){
-  const name = itemName.toLowerCase();
-  for(const [key, price] of Object.entries(PRIX_MOYENS)){
-    if(name.includes(key.toLowerCase())) return price;
-  }
-  return 2.5; // default
-}
-
-function estimateTotalBudget(courses){
-  if(!courses) return 0;
-  let total = 0;
-  for(const items of Object.values(courses)){
-    for(const item of items){
-      const name = typeof item === 'string' ? item : item.n;
-      total += estimateItemPrice(name);
-    }
-  }
-  return Math.round(total);
-}
 
 // ══ SORT MODE ═══════════════════════════════════════════════════
 
