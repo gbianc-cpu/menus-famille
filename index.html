@@ -1104,7 +1104,7 @@ function fillWeekSelect(){
 }
 
 // ══ API KEY MANAGEMENT ══════════════════════════════════════════
-let _apiKeyMem = '';
+var _apiKeyMem = '';
 
 // Cookie helpers — work everywhere including GitHub Pages
 function setCookie(name, value, days){
@@ -1202,13 +1202,15 @@ window._applyApiKey = function(key){
   window._preloadedApiKey = key;
   try{ document.cookie='menusfamille_apikey='+encodeURIComponent(key)+';max-age=31536000;path=/;SameSite=Lax'; }catch(e){}
   try{ localStorage.setItem('menusfamille_apikey', key); }catch(e){}
-  updateApiKeyStatus();
+  // Update UI safely (function may not exist yet at call time)
+  if(typeof updateApiKeyStatus === 'function') updateApiKeyStatus();
+  else setTimeout(()=>{ if(typeof updateApiKeyStatus === 'function') updateApiKeyStatus(); }, 1000);
   console.log('✅ Clé API appliquée:', key.slice(0,15)+'...');
 };
 
 // ══ STORAGE — In-memory (file://) + localStorage (web) ════════
-const _memStore = {};
-let _sortMode = 'rayon'; // courses sort mode
+var _memStore = {};
+var _sortMode = 'rayon';
 function saveWeek(key,data){
   _memStore[key]=data;
   try{localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(data));}catch(e){}
@@ -2023,7 +2025,7 @@ const SHARED_RECETTES = [
 
 
 // ══ ACTIVE RECIPES (set when a week is loaded) ════════════════
-let activeRecettes = STATIC_RECETTES; // default fallback
+var activeRecettes = []; // default fallback
 
 // ══ RENDER PLANNING ═══════════════════════════════════════════
 function renderPlanning(jours, weekKey){
@@ -2237,7 +2239,7 @@ function savePrefsMemory(arr){
   _prefsMemory = arr;
   try{ localStorage.setItem('menusfamille_prefs_memory', JSON.stringify(arr)); }catch(e){}
 }
-let _prefsMemory = [];
+var _prefsMemory = [];
 
 function addPrefMemory(reason, mealName){
   const mem = getPrefsMemory();
@@ -2248,10 +2250,10 @@ function addPrefMemory(reason, mealName){
 }
 
 // ══ REPLACE MEAL ═════════════════════════════════════════════════
-let _replaceMealIdx = null;
-let _replaceMealSlot = null; // 'midi' or 'soir'
-let _replaceMealName = '';
-let _replaceReasons = new Set();
+var _replaceMealIdx = null;
+var _replaceMealSlot = null; // 'midi' or 'soir'
+var _replaceMealName = '';
+var _replaceReasons = new Set();
 
 function openReplaceModal(btn){
   if(!hasApiKey()){ showApiKeyModal(); return; }
@@ -2357,7 +2359,7 @@ Réponds UNIQUEMENT en JSON: {"nom":"...","note":"Cuisiné pour 4","simon":"adap
 
 
 // ══ SYNC INDICATOR ══════════════════════════════════════════════
-let _syncTimeout = null;
+var _syncTimeout = null;
 function showSyncIndicator(state){
   const el = document.getElementById('sync-indicator');
   const lbl = document.getElementById('sync-label');
@@ -2373,7 +2375,7 @@ function showSyncIndicator(state){
 }
 
 // ══ COURSES REAL-TIME SYNC ═══════════════════════════════════════
-let _coursesChecked = {}; // local state
+var _coursesChecked = {}; // local state
 let _syncingCourses = false;
 
 function initCoursesSync(weekKey){
