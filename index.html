@@ -1377,7 +1377,21 @@ function displayWeek(key){
 
   renderPlanning(data.jours, key);
   renderRecipes();
-  renderShopping(data.courses||STATIC_COURSES);
+  // Normalize courses format before rendering
+  let coursesToRender = data.courses || STATIC_COURSES;
+  // If courses values are arrays of strings, convert to {n,q,u} objects
+  if(coursesToRender && typeof coursesToRender === 'object'){
+    const normalized = {};
+    for(const [cat, items] of Object.entries(coursesToRender)){
+      if(Array.isArray(items)){
+        normalized[cat] = items.map(item =>
+          typeof item === 'string' ? {n: item, q: 1, u: ''} : item
+        );
+      }
+    }
+    if(Object.keys(normalized).length > 0) coursesToRender = normalized;
+  }
+  renderShopping(coursesToRender);
   // Init real-time courses sync
   _coursesChecked = {};
   setTimeout(()=>initCoursesSync(key), 500);
@@ -2140,6 +2154,7 @@ function toggleRecipe(i){
 // ══ SHOPPING ══════════════════════════════════════════════════
 function renderShopping(courses){
   const raw=courses||STATIC_COURSES;
+  console.log('renderShopping called, cats:', Object.keys(raw||{}).length, 'first cat items:', Object.values(raw||{})[0]?.length);
   const src=sortCourses(raw);
   document.getElementById('dedup-items').innerHTML=DEDUPS.map(d=>`<span class="dedup-item">${d}</span>`).join('');
   const sc=document.getElementById('shop-content');
