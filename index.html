@@ -746,6 +746,10 @@ footer {
       <span class="home-btn-icon">📔</span>
       <div><div>Journal alimentaire</div><div class="home-btn-sub">Ce que vous avez réellement mangé</div></div>
     </button>
+    <button class="home-btn" style="margin-bottom:10px;" onclick="openBatchModal()">
+      <span class="home-btn-icon">🥡</span>
+      <div><div>Batch Cooking</div><div class="home-btn-sub">Préparer plusieurs repas en avance</div></div>
+    </button>
 
     <div class="home-divider"></div>
 
@@ -838,6 +842,54 @@ footer {
     <p style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;">Notez ce que vous avez réellement mangé. L'IA en tiendra compte pour les prochaines semaines.</p>
     <div id="journal-content"></div>
     <button class="journal-save-btn" onclick="saveJournalEntries()">💾 Sauvegarder le journal</button>
+  </div>
+</div>
+
+<!-- ══ BATCH COOKING MODAL ═════════════════════════════════════════ -->
+<div id="batch-modal" class="overlay batch-modal-overlay">
+  <div class="batch-box">
+    <div style="width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 1.25rem;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
+      <div>
+        <div class="batch-title">🥡 Batch Cooking</div>
+        <div class="batch-sub">Sélectionnez les recettes à préparer en avance. L'IA génère un plan d'organisation optimisé.</div>
+      </div>
+      <button onclick="closeBatchModal()" style="background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--text3);flex-shrink:0;">×</button>
+    </div>
+
+    <div class="batch-section">
+      <div class="batch-section-title">
+        <span>👨‍👩‍👧‍👦 Repas famille</span>
+        <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;">(sélectionnez ce que vous voulez préparer à l'avance)</span>
+      </div>
+      <div id="batch-famille-list"></div>
+    </div>
+
+    <div class="batch-section">
+      <div class="batch-section-title" style="color:#C05A32;">
+        <span>👩 Repas Marianne</span>
+        <span class="batch-marianne-badge">Nature House</span>
+      </div>
+      <div id="batch-marianne-list"></div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div style="font-size:12px;color:var(--text2);">
+        <span id="batch-selected-count">0</span> recette(s) sélectionnée(s)
+      </div>
+      <button style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;" onclick="selectAllBatch()">Tout sélectionner</button>
+    </div>
+
+    <button class="batch-generate-btn" id="batch-gen-btn" onclick="generateBatchPlan()">
+      ✨ Générer le plan de batch cooking
+    </button>
+
+    <div class="batch-plan-output" id="batch-plan-output">
+      <div class="batch-plan-title">📋 Plan d'organisation</div>
+      <div id="batch-plan-steps"></div>
+      <div class="batch-total-time" id="batch-total-time"></div>
+      <button class="shop-btn shop-btn-outline" style="width:100%;margin-top:10px;" onclick="window.print()">🖨 Imprimer le plan</button>
+    </div>
   </div>
 </div>
 
@@ -1020,6 +1072,7 @@ footer {
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <div style="font-size:12px;color:var(--text3)">Basculez le mode par recette ↓</div>
         <button class="shop-btn shop-btn-outline" onclick="generateAllMissingRecipes()" id="gen-all-recipes-btn" style="font-size:12px;padding:7px 14px;">✨ Générer manquantes</button>
+        <button class="shop-btn shop-btn-outline" onclick="openBatchModal()" style="font-size:12px;padding:7px 14px;background:var(--sage-ultra);border-color:var(--sage-pale);color:var(--forest);">🥡 Batch cooking</button>
         <button class="shop-btn shop-btn-outline" onclick="exportRecipesPDF()" style="font-size:12px;padding:7px 14px;">📄 Export PDF</button>
       </div>
     </div>
@@ -1800,13 +1853,14 @@ async function generateMenusForWeek(weekKey, prefs){
   const personPrefsNote = buildPersonPrefsPrompt() ? '\n' + buildPersonPrefsPrompt() : '';
   // Journal insights
   const journalNote = buildJournalPrompt() ? '\n' + buildJournalPrompt() : '';
+  const marianneNote = '\nMarianne suit un régime protéiné Nature House : INTERDIT féculents/sucres/pain/pâtes/riz. AUTORISÉ viandes maigres/poissons/légumes. Max 3cs graisses/jour. Pour chaque dîner, ajoute un champ "marianne" avec son adaptation courte (ex: \"idem sans les pâtes, double portion légumes\").';
   const prompt=`Tu es un diététicien expert. Génère un planning de menus en JSON compact.
 Famille: Geoffrey, Marianne (adultes), Simon 3½ ans APLV (zéro lait animal), Diane 2 ans.
-Mois: ${month}. Préférences: ${prefsStr}.${memNote}${antiRepeat}${saisonNote}${personPrefsNote}${journalNote}
+Mois: ${month}. Préférences: ${prefsStr}.${memNote}${antiRepeat}${saisonNote}${personPrefsNote}${journalNote}${marianneNote}
 Règles midis: Lundi=restes dim, Mardi=restes lun, Mercredi=cuisiné, Jeudi=restes mer, Vendredi=restes jeu, Samedi=cuisiné, Dimanche=cuisiné.
 
 Réponds UNIQUEMENT en JSON valide sans backticks ni texte autour:
-{"jours":[{"jour":"Lundi","midi":{"nom":"...","note":"Restes de ...","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"Cuisiné pour 4"}},{"jour":"Mardi","midi":{"nom":"...","note":"Restes du lundi","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"..."}},{"jour":"Mercredi","midi":{"nom":"...","note":"Repas cuisiné tout le monde","reste":false},"soir":{"nom":"...","note":"..."}},{"jour":"Jeudi","midi":{"nom":"...","note":"Restes du mercredi","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"..."}},{"jour":"Vendredi","midi":{"nom":"...","note":"Restes du jeudi","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"..."}},{"jour":"Samedi","midi":{"nom":"...","note":"Repas cuisiné tout le monde","reste":false},"soir":{"nom":"...","note":"..."}},{"jour":"Dimanche","midi":{"nom":"...","note":"Restes du samedi","reste":true},"soir":{"nom":"...","note":"..."}}],"courses":{"Fruits et légumes":["Tomates 500g","..."],"Viandes et poissons":["Poulet 1kg","..."],"Épicerie":["Pâtes 500g","..."],"Sans lactose pour Simon":["Crème de riz 400ml"],"Produits frais et laitiers":["Oeufs x12","..."],"Bouillons et condiments":["Herbes de Provence","..."]}}`;
+{"jours":[{"jour":"Lundi","midi":{"nom":"...","note":"Restes de ...","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"Cuisiné pour 4","marianne":"adaptation regime Marianne"}},{"jour":"Mardi","midi":{"nom":"...","note":"Restes du lundi","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"..."}},{"jour":"Mercredi","midi":{"nom":"...","note":"Repas cuisiné tout le monde","reste":false},"soir":{"nom":"...","note":"..."}},{"jour":"Jeudi","midi":{"nom":"...","note":"Restes du mercredi","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"..."}},{"jour":"Vendredi","midi":{"nom":"...","note":"Restes du jeudi","qui":"Geoffrey, Marianne, Simon","reste":true},"soir":{"nom":"...","note":"..."}},{"jour":"Samedi","midi":{"nom":"...","note":"Repas cuisiné tout le monde","reste":false},"soir":{"nom":"...","note":"..."}},{"jour":"Dimanche","midi":{"nom":"...","note":"Restes du samedi","reste":true},"soir":{"nom":"...","note":"..."}}],"courses":{"Fruits et légumes":["Tomates 500g","..."],"Viandes et poissons":["Poulet 1kg","..."],"Épicerie":["Pâtes 500g","..."],"Sans lactose pour Simon":["Crème de riz 400ml"],"Produits frais et laitiers":["Oeufs x12","..."],"Bouillons et condiments":["Herbes de Provence","..."]}}`;
 
   try {
     const apiKey = getApiKey();
@@ -2465,6 +2519,7 @@ function renderPlanning(jours, weekKey){
           <div class="meal-type">🌙 Soir</div>
           <div class="meal-name">${s.nom}</div>
           <div class="meal-note">${s.note||''}</div>
+          ${s.marianne ? `<div class="meal-marianne">👩 Marianne : ${s.marianne}</div>` : ''}
           <button class="meal-replace-btn" data-idx="${i}" data-slot="soir" onclick="openReplaceModal(this)" title="Remplacer ce repas">↺ Remplacer</button>
         </div>
       </div>
@@ -3879,6 +3934,230 @@ async function generateAllMissingRecipes(){
   for(const {i} of stubs){
     await generateMissingRecipe(i);
     await new Promise(r => setTimeout(r, 500)); // small delay between calls
+  }
+}
+
+
+// ══ MARIANNE RÉGIME NATURE HOUSE ════════════════════════════════
+var MARIANNE_REGIME = {
+  phase: 'protéines',
+  interdit: ['sucres', 'féculents', 'pain', 'pâtes', 'riz', 'pommes de terre', 'farine', 'alcool', 'fruits sucrés'],
+  autorise: ['viandes maigres', 'poissons', 'légumes verts', 'oeufs', 'yaourt nature 0%', 'fromage blanc 0%'],
+  graisses: '3 cuillères à soupe par jour (huile olive, colza)',
+  note: 'Régime Nature House phase protéines — pas de féculents ni sucres'
+};
+
+function getMarianneRegimePrompt(){
+  return 'Marianne suit un régime protéiné Nature House : INTERDIT féculents/sucres/pain/pâtes/riz/alcool. ' +
+         'AUTORISÉ viandes maigres/poissons/légumes verts/oeufs/fromage blanc 0%. ' +
+         'Maximum 3 cuillères à soupe de graisses par jour. ' +
+         'Pour chaque dîner, ajoute un champ "marianne" avec son adaptation (ex: sans les pâtes, portion protéine + légumes uniquement).';
+}
+
+// Inject Marianne regime into generation prompt
+function buildMariannePrompt(){
+  return getMarianneRegimePrompt();
+}
+
+// ══ BATCH COOKING ════════════════════════════════════════════════
+var _batchSelected = new Set();
+
+function openBatchModal(){
+  if(!currentWeekKey){ showToast('Choisissez une semaine'); return; }
+  renderBatchModal();
+  document.getElementById('batch-modal').classList.add('active');
+}
+function closeBatchModal(){
+  document.getElementById('batch-modal').classList.remove('active');
+  document.getElementById('batch-plan-output').classList.remove('show');
+}
+
+function renderBatchModal(){
+  _batchSelected = new Set();
+  var weekData = loadWeek(currentWeekKey);
+  if(!weekData || !weekData.jours) return;
+
+  // Famille recipes (dinners + some midis)
+  var familleRecipes = [];
+  var marianneRecipes = [];
+
+  weekData.jours.forEach(function(jour){
+    // Soir toujours inclus
+    if(jour.soir && jour.soir.nom && !jour.soir.reste){
+      familleRecipes.push({
+        nom: jour.soir.nom,
+        jour: jour.jour,
+        slot: 'soir',
+        temps: getRecipeTime(jour.soir.nom),
+        tags: ['Soir', jour.jour]
+      });
+      // Marianne version if regime active
+      marianneRecipes.push({
+        nom: jour.soir.nom + ' — version Marianne',
+        original: jour.soir.nom,
+        jour: jour.jour,
+        temps: '5 min',
+        tags: ['Protéines', 'Sans féculents']
+      });
+    }
+    // Midis cuisinés (mercredi, samedi, dimanche)
+    if(jour.midi && jour.midi.nom && !jour.midi.reste){
+      familleRecipes.push({
+        nom: jour.midi.nom,
+        jour: jour.jour,
+        slot: 'midi',
+        temps: getRecipeTime(jour.midi.nom),
+        tags: ['Midi', jour.jour]
+      });
+    }
+  });
+
+  // Remove duplicates
+  var seen = new Set();
+  familleRecipes = familleRecipes.filter(function(r){
+    if(seen.has(r.nom)) return false;
+    seen.add(r.nom);
+    return true;
+  });
+
+  // Render famille list
+  var familleHtml = '';
+  familleRecipes.forEach(function(r, idx){
+    var id = 'batch-f-' + idx;
+    familleHtml += '<label class="batch-recipe-item" id="item-'+id+'" data-id="'+id+'" onclick="toggleBatchEl(this)">' +
+      '<input type="checkbox" id="'+id+'" onclick="event.stopPropagation();" onchange="toggleBatchEl(this.closest(\'.batch-recipe-item\'))">' +
+      '<div>' +
+        '<div class="batch-recipe-name">' + r.nom + '</div>' +
+        '<div class="batch-recipe-meta">⏱ ' + r.temps + ' · ' + r.jour + '</div>' +
+      '</div>' +
+    '</label>';
+  });
+  document.getElementById('batch-famille-list').innerHTML = familleHtml || '<p style="font-size:12px;color:var(--text3);">Aucun repas cuisiné cette semaine.</p>';
+
+  // Render Marianne list
+  var marianneHtml = '<div class="marianne-regime-bar" style="margin-bottom:10px;">' +
+    '<span class="marianne-regime-icon">🌿</span>' +
+    '<span class="marianne-regime-text">Régime Nature House · Protéines + légumes · Sans féculents ni sucres · Max 3 cs de graisses/jour</span>' +
+  '</div>';
+  marianneRecipes.slice(0,5).forEach(function(r, idx){
+    var id = 'batch-m-' + idx;
+    marianneHtml += '<label class="batch-recipe-item" id="item-'+id+'" data-id="'+id+'" onclick="toggleBatchEl(this)">' +
+      '<input type="checkbox" id="'+id+'" onclick="event.stopPropagation();" onchange="toggleBatchEl(this.closest(\'.batch-recipe-item\'))">' +
+      '<div>' +
+        '<div class="batch-recipe-name">' + r.nom + '</div>' +
+        '<div class="batch-recipe-meta">⏱ Adaptation rapide · ' + r.jour + '</div>' +
+        '<div class="batch-recipe-tags"><span class="batch-tag marianne">Marianne</span></div>' +
+      '</div>' +
+    '</label>';
+  });
+  document.getElementById('batch-marianne-list').innerHTML = marianneHtml;
+  updateBatchCount();
+}
+
+function getRecipeTime(nom){
+  var r = activeRecettes && activeRecettes.find(function(rec){ return rec.nom === nom; });
+  return r ? (r.temps || '30 min') : '30 min';
+}
+
+function toggleBatchEl(labelEl){
+  if(!labelEl) return;
+  var cb = labelEl.querySelector('input[type=checkbox]');
+  if(!cb) return;
+  var nom = labelEl.querySelector('.batch-recipe-name');
+  var nomText = nom ? nom.textContent : '';
+  if(cb.checked){
+    _batchSelected.add(nomText);
+    labelEl.classList.add('checked');
+  } else {
+    _batchSelected.delete(nomText);
+    labelEl.classList.remove('checked');
+  }
+  updateBatchCount();
+}
+
+function selectAllBatch(){
+  document.querySelectorAll('.batch-recipe-item').forEach(function(item){
+    var cb = item.querySelector('input[type=checkbox]');
+    if(cb) cb.checked = true;
+    item.classList.add('checked');
+    var nom = item.querySelector('.batch-recipe-name');
+    if(nom) _batchSelected.add(nom.textContent);
+  });
+  updateBatchCount();
+}
+
+function updateBatchCount(){
+  var el = document.getElementById('batch-selected-count');
+  if(el) el.textContent = _batchSelected.size;
+}
+
+async function generateBatchPlan(){
+  if(!hasApiKey()){ showApiKeyModal(); return; }
+  if(_batchSelected.size === 0){ showToast('Sélectionnez au moins une recette'); return; }
+
+  var btn = document.getElementById('batch-gen-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Génération...'; }
+
+  var recipesList = [..._batchSelected];
+  var weekData = currentWeekKey ? loadWeek(currentWeekKey) : null;
+  var weekLabel = weekData ? 'semaine du ' + new Date(currentWeekKey).toLocaleDateString('fr-FR',{day:'numeric',month:'long'}) : 'cette semaine';
+
+  var prompt = [
+    'Tu es un chef organisateur. Plan de batch cooking pour cette session.',
+    'Recettes: ' + recipesList.join(', ') + '.',
+    'Marianne: regime proteines, sans feculents ni sucres, max 3cs graisses/jour.',
+    'Famille: Geoffrey, Marianne, Simon (APLV), Diane.',
+    'Ordre optimise: commencer par cuissons longues. Paralleliser si possible.',
+    'Reponds UNIQUEMENT en JSON: {"total_minutes":120,"etapes":[{"ordre":1,"action":"...","duree_min":5,"recettes":["nom"],"conseil":"tip"}]}'
+  ].join("\n");
+
+  try {
+    var apiKey = getApiKey();
+    var res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:2000,messages:[{role:'user',content:prompt}]})
+    });
+    var data = await res.json();
+    var text = data.content.map(function(b){ return b.text||''; }).join('');
+    var jsonStr = text.trim().replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+    var s = jsonStr.indexOf('{'), e = jsonStr.lastIndexOf('}');
+    if(s>=0 && e>s) jsonStr = jsonStr.slice(s,e+1);
+    var parsed = JSON.parse(jsonStr);
+
+    // Render plan
+    var stepsHtml = '';
+    (parsed.etapes||[]).forEach(function(step){
+      var recettesStr = (step.recettes||[]).join(', ');
+      var isMarianne = recettesStr.toLowerCase().includes('marianne');
+      stepsHtml += '<div class="batch-step">' +
+        '<div class="batch-step-num">' + step.ordre + '</div>' +
+        '<div style="flex:1">' +
+          '<div>' + step.action + (isMarianne ? '<span class="batch-marianne-badge">👩 Marianne</span>' : '') + '</div>' +
+          (recettesStr ? '<div style="font-size:11px;color:var(--text3);margin-top:2px;">📌 ' + recettesStr + '</div>' : '') +
+          (step.conseil ? '<div style="font-size:11px;color:var(--forest-light);margin-top:2px;">💡 ' + step.conseil + '</div>' : '') +
+        '</div>' +
+        '<div class="batch-step-time">⏱ ' + (step.duree_min||0) + ' min</div>' +
+      '</div>';
+    });
+
+    document.getElementById('batch-plan-steps').innerHTML = stepsHtml;
+    document.getElementById('batch-total-time').innerHTML =
+      '<strong>⏱ Durée totale estimée : ' + (parsed.total_minutes||'?') + ' minutes</strong> · ' +
+      recipesList.length + ' recette(s) préparées';
+    document.getElementById('batch-plan-output').classList.add('show');
+    showToast('✅ Plan de batch cooking généré !');
+
+  } catch(err){
+    console.error('Batch error:', err);
+    showToast('Erreur lors de la génération');
+  } finally {
+    if(btn){ btn.disabled = false; btn.innerHTML = '✨ Générer le plan de batch cooking'; }
   }
 }
 
