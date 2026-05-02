@@ -717,6 +717,44 @@ footer {
   .mobile-nav-gen { padding: 5px 9px; }
   .day-name { font-size: 12px; }
 }
+
+/* ── BATCH COOKING ── */
+#batch-modal{background:rgba(0,0,0,.6);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:1rem;}
+.batch-box{background:var(--warm);border-radius:var(--r-lg);padding:1.5rem;width:100%;max-width:560px;max-height:86vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.batch-title{font-family:'Lora',serif;font-size:19px;color:var(--forest);font-weight:500;margin-bottom:4px;}
+.batch-sub{font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.5;}
+.batch-section{margin-bottom:1.25rem;}
+.batch-section-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.batch-recipe-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--cream);border:1px solid var(--border-light);border-radius:var(--r-sm);margin-bottom:6px;cursor:pointer;transition:all .15s;}
+.batch-recipe-item:hover{border-color:var(--sage-pale);}
+.batch-recipe-item.checked{background:var(--sage-ultra);border-color:var(--sage-pale);}
+.batch-recipe-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--forest);flex-shrink:0;margin-top:2px;cursor:pointer;}
+.batch-recipe-name{font-size:13px;font-weight:500;color:var(--text);line-height:1.3;}
+.batch-recipe-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+.batch-recipe-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.batch-tag{padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;background:var(--sage-ultra);color:var(--forest-light);}
+.batch-tag.marianne{background:#FEE8E0;color:#C05A32;}
+.batch-generate-btn{width:100%;padding:12px;background:var(--forest);border:none;border-radius:var(--r-sm);color:#fff;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-top:.5rem;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s;}
+.batch-generate-btn:hover{opacity:.88;}
+.batch-generate-btn:disabled{opacity:.45;cursor:not-allowed;}
+.batch-plan-output{background:var(--cream);border:1px solid var(--border-light);border-radius:var(--r);padding:14px 16px;margin-top:1rem;display:none;}
+.batch-plan-output.show{display:block;}
+.batch-plan-title{font-size:13px;font-weight:600;color:var(--forest);margin-bottom:10px;}
+.batch-step{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;color:var(--text2);line-height:1.5;}
+.batch-step:last-child{border-bottom:none;}
+.batch-step-num{min-width:22px;height:22px;border-radius:50%;background:var(--forest);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.batch-step-time{font-size:11px;color:var(--text3);white-space:nowrap;margin-top:2px;}
+.batch-marianne-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;background:#FEE8E0;border:1px solid rgba(192,90,50,.15);font-size:10px;font-weight:600;color:#C05A32;margin-left:5px;vertical-align:middle;}
+.batch-total-time{font-size:12px;color:var(--text2);margin-top:10px;padding-top:10px;border-top:1px solid var(--border-light);}
+.marianne-regime-bar{background:#FEE8E0;border:1px solid rgba(192,90,50,.2);border-radius:var(--r-sm);padding:8px 14px;margin-bottom:.875rem;display:flex;align-items:center;gap:10px;font-size:12px;color:#7A2E18;}
+.marianne-regime-icon{font-size:16px;flex-shrink:0;}
+.marianne-regime-text{flex:1;line-height:1.4;}
+.meal-marianne{font-size:11px;color:#C05A32;margin-top:3px;padding:3px 8px;background:#FEE8E0;border-radius:6px;display:inline-block;}
+
+@media(max-width:640px){
+  #batch-modal{align-items:flex-end !important;padding:0;}
+  .batch-box{border-radius:var(--r-lg) var(--r-lg) 0 0;max-height:90vh;width:100%;}
+}
 </style>
 </head>
 <body>
@@ -846,7 +884,7 @@ footer {
 </div>
 
 <!-- ══ BATCH COOKING MODAL ═════════════════════════════════════════ -->
-<div id="batch-modal" class="overlay batch-modal-overlay">
+<div id="batch-modal" class="overlay">
   <div class="batch-box">
     <div style="width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 1.25rem;"></div>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
