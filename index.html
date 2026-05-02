@@ -1633,46 +1633,56 @@ function displayWeek(key){
   document.getElementById('week-meta-prefs').innerHTML=(data.prefs||[]).map(p=>`<span class="wpref">${p}</span>`).join('');
   document.getElementById('week-meta-date').textContent='Généré le '+new Date(data.savedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
 
-  // Build recipe list from THIS week's dinners only
+  // Build recipe list — Priority: 1) saved/generated 2) pool 3) stub
   const allPool = [
     ...(typeof STATIC_RECETTES !== 'undefined' ? STATIC_RECETTES : []),
     ...(typeof SHARED_RECETTES !== 'undefined' ? SHARED_RECETTES : [])
   ];
 
-  // Get dinner names from this week's jours
-  const weekDinnerNames = (data.jours||[]).map(j=>j.soir && j.soir.nom).filter(Boolean);
+  // Map of saved recipes (includes AI-generated ones)
+  const savedRecipesMap = {};
+  (data.recettes || []).forEach(function(r){
+    if(r && r.nom && !r.isStub) savedRecipesMap[r.nom] = r;
+  });
 
-  // Match recipes by name (exact or partial)
-  const matchedRecettes = weekDinnerNames.map(dinnerName => {
-    // Try exact match first
-    let r = allPool.find(rec => rec.nom === dinnerName);
+  const weekDinnerNames = (data.jours||[]).map(function(j){ return j.soir && j.soir.nom; }).filter(Boolean);
+
+  const matchedRecettes = weekDinnerNames.map(function(dinnerName){
+    // 1. Saved recipes (generated or stored) — exact match
+    if(savedRecipesMap[dinnerName]) return savedRecipesMap[dinnerName];
+    // 2. Pool exact match
+    var r = allPool.find(function(rec){ return rec.nom === dinnerName; });
+    // 3. Partial match in pool
     if(!r){
-      // Try partial match (dinner name contains recipe name or vice versa)
-      r = allPool.find(rec =>
-        dinnerName.toLowerCase().includes(rec.nom.toLowerCase().slice(0,20)) ||
-        rec.nom.toLowerCase().includes(dinnerName.toLowerCase().slice(0,20))
-      );
+      r = allPool.find(function(rec){
+        return dinnerName.toLowerCase().includes(rec.nom.toLowerCase().slice(0,20)) ||
+               rec.nom.toLowerCase().includes(dinnerName.toLowerCase().slice(0,20));
+      });
     }
+    // 4. Partial match in saved recipes
     if(!r){
-      // Create a basic recipe stub for unmatched dinners
+      var savedArr = Object.values(savedRecipesMap);
+      r = savedArr.find(function(rec){
+        return dinnerName.toLowerCase().includes(rec.nom.toLowerCase().slice(0,20)) ||
+               rec.nom.toLowerCase().includes(dinnerName.toLowerCase().slice(0,20));
+      });
+    }
+    // 5. Stub for unmatched
+    if(!r){
       r = {
-        nom: dinnerName,
-        isStub: true,
-        temps: '—',
-        tmTemps: '—',
+        nom: dinnerName, isStub: true, temps: '—', tmTemps: '—',
         tags: ['À générer'],
-        ingredients: [{q:1,u:'',n:'Recette à générer par l\'IA'}],
-        etapes: ['Cliquez sur Générer pour créer cette recette avec l\'IA automatiquement.'],
+        ingredients: [{q:1,u:'',n:"Recette à générer par l'IA"}],
+        etapes: ["Cliquez sur Générer pour créer cette recette avec l'IA automatiquement."],
         tmEtapes: [{badge:'Bol',text:'Adapter selon les ingrédients.'},{badge:'Fin',text:'Servir chaud.'}],
         tmTip: 'Adaptez la recette à votre TM31 selon les ingrédients.',
-        simon: "Vérifier l'absence de lait animal. Adapter si nécessaire."
+        simon: "Vérifier l'absence de lait animal."
       };
     }
     return r;
   });
 
-  // Remove duplicates
-  activeRecettes = matchedRecettes.filter((r,i,arr) => arr.findIndex(x=>x.nom===r.nom)===i);
+  activeRecettes = matchedRecettes.filter(function(r,i,arr){ return arr.findIndex(function(x){ return x.nom===r.nom; })===i; });
   console.log('Week',key,'recettes:',activeRecettes.length,'dinners:',weekDinnerNames.length);
   recipeMode = {}; // reset per-recipe TM overrides
 
@@ -3831,12 +3841,15 @@ Réponds UNIQUEMENT en JSON valide sans backticks:
       generatedAt: new Date().toISOString()
     };
 
-    // Save updated recipes to the week
+    // Save generated recipe to the week's saved recipes
     if(currentWeekKey){
       const weekData = loadWeek(currentWeekKey);
       if(weekData){
-        weekData.recettes = activeRecettes;
+        // Merge: keep existing non-stub recipes, add/replace this one
+        const existing = (weekData.recettes || []).filter(function(r){ return r && r.nom !== recipe.nom; });
+        weekData.recettes = [...existing, activeRecettes[idx]];
         saveWeek(currentWeekKey, weekData);
+        console.log('Recipe saved to Firebase:', activeRecettes[idx].nom);
       }
     }
 
