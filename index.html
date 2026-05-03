@@ -1153,6 +1153,7 @@ footer {
     <div class="shop-footer">
       <button class="shop-btn shop-btn-outline" onclick="window.print()">🖨 Imprimer</button>
       <button class="shop-btn shop-btn-outline" onclick="resetChecks()">↺ Tout décocher</button>
+      <button class="shop-btn shop-btn-outline" onclick="recalculateCourses()" title="Recalculer les courses depuis les repas actuels">🔄 Recalculer</button>
       <button class="whatsapp-btn" onclick="shareWhatsApp()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
         Envoyer à Marianne
@@ -2876,7 +2877,7 @@ Réponds UNIQUEMENT en JSON: {"nom":"...","note":"Cuisiné pour 4","simon":"adap
     const s=jsonStr.indexOf('{'), e=jsonStr.lastIndexOf('}');
     if(s>=0 && e>s) jsonStr=jsonStr.slice(s,e+1);
     const parsed = JSON.parse(jsonStr);
-    wd.jours[_replaceMealIdx][slot] = {
+    const newMeal = {
       ...currentMeal,
       nom: parsed.nom,
       note: parsed.note || currentMeal.note,
@@ -2884,10 +2885,31 @@ Réponds UNIQUEMENT en JSON: {"nom":"...","note":"Cuisiné pour 4","simon":"adap
       replacedFrom: currentMeal.nom,
       replaceReason: reasonStr
     };
+    wd.jours[_replaceMealIdx][slot] = newMeal;
+
+    // Fix 1: Si on remplace un soir, mettre à jour le midi du lendemain si c'est des restes
+    if(slot === 'soir'){
+      const nextDayIdx = _replaceMealIdx + 1;
+      if(nextDayIdx < wd.jours.length){
+        const nextMidi = wd.jours[nextDayIdx].midi;
+        if(nextMidi && nextMidi.reste){
+          // Update the reste name to match new dinner
+          wd.jours[nextDayIdx].midi = {
+            ...nextMidi,
+            nom: 'Restes : ' + parsed.nom,
+            note: 'Restes du ' + wd.jours[_replaceMealIdx].jour.toLowerCase() + ' soir'
+          };
+        }
+      }
+    }
+
+    // Fix 2: Regenerate courses from current week jours
+    await regenerateCourses(wd);
+
     saveWeek(currentWeekKey, wd);
     displayWeek(currentWeekKey);
     closeReplaceModal();
-    showToast(`✓ Remplacé par : ${parsed.nom}`);
+    showToast('✓ Remplacé par : ' + parsed.nom);
   } catch(err){
     console.error('Replace error:', err);
     document.getElementById('replace-loading').style.display = 'none';
@@ -4204,6 +4226,76 @@ async function generateBatchPlan(){
     showToast('Erreur lors de la génération');
   } finally {
     if(btn){ btn.disabled = false; btn.innerHTML = '✨ Générer le plan de batch cooking'; }
+  }
+}
+
+async function recalculateCourses(){
+  if(!currentWeekKey){ showToast('Aucune semaine sélectionnée'); return; }
+  if(!hasApiKey()){ showApiKeyModal(); return; }
+  const wd = loadWeek(currentWeekKey);
+  if(!wd){ showToast('Aucune semaine chargée'); return; }
+  showToast('⏳ Recalcul des courses...');
+  await regenerateCourses(wd);
+  saveWeek(currentWeekKey, wd);
+  renderShopping(wd.courses);
+  showToast('✅ Liste de courses mise à jour !');
+}
+
+// ══ REGENERATE COURSES FROM JOURS ══════════════════════════════
+async function regenerateCourses(weekData){
+  if(!weekData || !hasApiKey()) return;
+
+  // Build list of all dinner names for this week
+  const dinnerNames = (weekData.jours||[])
+    .map(j => j.soir && !j.soir.reste ? j.soir.nom : null)
+    .filter(Boolean);
+
+  if(!dinnerNames.length) return;
+
+  const prompt = [
+    'Tu es un chef cuisinier. Génère une liste de courses complète pour ces repas de la semaine.',
+    'Repas: ' + dinnerNames.join(', ') + '.',
+    'Famille: Geoffrey, Marianne (adultes), Simon APLV (sans lait animal), Diane 2 ans. 4 personnes.',
+    'Reponds UNIQUEMENT en JSON sans backticks:',
+    '{"Fruits et légumes":["Tomates 500g"],"Viandes et poissons":["Poulet 1kg"],"Épicerie":["Pâtes 500g"],"Sans lactose pour Simon":["Crème de riz 400ml"],"Produits frais et laitiers":["Oeufs x12"],"Bouillons et condiments":["Herbes de Provence"]}'
+  ].join("\n");
+
+  try {
+    const apiKey = getApiKey();
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(b => b.text || '').join('');
+    let jsonStr = text.trim().replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+    const s = jsonStr.indexOf('{'), e = jsonStr.lastIndexOf('}');
+    if(s >= 0 && e > s) jsonStr = jsonStr.slice(s, e+1);
+    const parsed = JSON.parse(jsonStr);
+
+    // Normalize and update courses
+    const normalized = {};
+    for(const [cat, items] of Object.entries(parsed)){
+      normalized[cat] = (items||[]).map(item =>
+        typeof item === 'string' ? {n: item, q: 1, u: ''} : item
+      );
+    }
+    weekData.courses = normalized;
+    showSyncIndicator('saving');
+    setTimeout(() => showSyncIndicator('saved'), 1000);
+  } catch(err) {
+    console.warn('regenerateCourses error:', err);
+    // Don't fail silently — keep existing courses
   }
 }
 
