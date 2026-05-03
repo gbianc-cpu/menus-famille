@@ -2711,11 +2711,25 @@ function renderShopping(courses){
   if(detailEl) detailEl.textContent=`${total} articles · Prix moyens estimés Leclerc`;
 }
 function checkItem(cb,id){
-  document.getElementById(id)?.classList.toggle('checked',cb.checked);
-  const chk=document.querySelectorAll('.shop-item.checked').length;
-  const tot=parseInt(document.getElementById('total-count').textContent)||1;
-  document.getElementById('checked-count').textContent=chk;
-  document.getElementById('prog-fill').style.width=(chk/tot*100)+'%';
+  var checked = cb.checked;
+  document.getElementById(id)?.classList.toggle('checked', checked);
+  _coursesChecked[id] = checked;
+
+  // Update progress
+  var chk = Object.values(_coursesChecked).filter(Boolean).length;
+  var tot = parseInt(document.getElementById('total-count').textContent)||1;
+  document.getElementById('checked-count').textContent = chk;
+  document.getElementById('prog-fill').style.width = (chk/tot*100)+'%';
+
+  // Save to localStorage immediately
+  if(currentWeekKey){
+    try{ localStorage.setItem('menusfamille_checked_'+currentWeekKey, JSON.stringify(_coursesChecked)); }catch(e){}
+  }
+
+  // Sync to Firebase
+  if(window.fbSetCourseChecked && currentWeekKey){
+    window.fbSetCourseChecked(currentWeekKey, id, checked);
+  }
 }
 function resetChecks(){
   document.querySelectorAll('.shop-item').forEach(e=>e.classList.remove('checked'));
@@ -2940,35 +2954,45 @@ var _coursesChecked = {}; // local state
 let _syncingCourses = false;
 
 function initCoursesSync(weekKey){
-  // Listen for real-time changes from Firebase
+  // 1. Load from localStorage first (instant, works offline)
+  try {
+    var saved = localStorage.getItem('menusfamille_checked_'+weekKey);
+    if(saved){
+      _coursesChecked = JSON.parse(saved) || {};
+      applyCheckedState(_coursesChecked);
+    }
+  } catch(e){}
+
+  // 2. Then sync with Firebase (may override with more recent state)
   if(window.fbSyncCourses){
-    window.fbSyncCourses(weekKey, (remoteChecked) => {
-      _coursesChecked = {..._coursesChecked, ...remoteChecked};
-      // Update UI without re-rendering everything
-      Object.entries(remoteChecked).forEach(([id, checked]) => {
-        const el = document.getElementById(id);
-        if(el){
-          el.classList.toggle('checked', checked);
-          const cb = el.querySelector('input[type=checkbox]');
-          if(cb) cb.checked = checked;
-        }
-      });
+    window.fbSyncCourses(weekKey, function(remoteChecked){
+      _coursesChecked = Object.assign({}, _coursesChecked, remoteChecked);
+      applyCheckedState(remoteChecked);
       updateCourseCounter();
+      // Also save to localStorage
+      try{ localStorage.setItem('menusfamille_checked_'+weekKey, JSON.stringify(_coursesChecked)); }catch(e){}
     });
-    // Load initial state
-    window.fbGetCourseChecked(weekKey).then(checked => {
-      _coursesChecked = checked || {};
-      Object.entries(_coursesChecked).forEach(([id, chk]) => {
-        const el = document.getElementById(id);
-        if(el){
-          el.classList.toggle('checked', chk);
-          const cb = el.querySelector('input[type=checkbox]');
-          if(cb) cb.checked = chk;
-        }
-      });
-      updateCourseCounter();
-    });
+    window.fbGetCourseChecked(weekKey).then(function(checked){
+      if(checked && Object.keys(checked).length > 0){
+        _coursesChecked = Object.assign({}, _coursesChecked, checked);
+        applyCheckedState(_coursesChecked);
+        updateCourseCounter();
+        try{ localStorage.setItem('menusfamille_checked_'+weekKey, JSON.stringify(_coursesChecked)); }catch(e){}
+      }
+    }).catch(function(){});
   }
+}
+
+function applyCheckedState(checkedMap){
+  Object.entries(checkedMap||{}).forEach(function(kv){
+    var id = kv[0], checked = kv[1];
+    var el = document.getElementById(id);
+    if(el){
+      el.classList.toggle('checked', checked);
+      var cb = el.querySelector('input[type=checkbox]');
+      if(cb) cb.checked = checked;
+    }
+  });
 }
 
 function updateCourseCounter(){
@@ -2998,12 +3022,14 @@ function resetChecks(){
   document.querySelectorAll('.shop-item').forEach(e=>e.classList.remove('checked'));
   document.querySelectorAll('.shop-item input').forEach(c=>c.checked=false);
   updateCourseCounter();
+  // Clear localStorage
+  if(currentWeekKey){
+    try{ localStorage.removeItem('menusfamille_checked_'+currentWeekKey); }catch(e){}
+  }
   // Clear Firebase
   if(window.fbSetCourseChecked && currentWeekKey){
-    // Reset all items
     document.querySelectorAll('.shop-item').forEach(el=>{
-      if(el.id && window.fbSetCourseChecked)
-        window.fbSetCourseChecked(currentWeekKey, el.id, false);
+      if(el.id) window.fbSetCourseChecked(currentWeekKey, el.id, false);
     });
   }
 }
